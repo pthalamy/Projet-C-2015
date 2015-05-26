@@ -6,3 +6,5 @@ http://ensiwiki.ensimag.fr/index.php/Projet_C
 À ajouter dans le fichier ~/.emacs.el :
 **(setq c-default-style "linux"
           c-basic-offset 4)**
+## Tags:
+**etags *.c *.h**

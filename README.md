@@ -8,3 +8,5 @@ http://ensiwiki.ensimag.fr/index.php/Projet_C
           c-basic-offset 4)**
 ## Tags:
 **etags *.c *.h**
+**M-x visit-tags-table RET**
+**M-. fonction_Name RET**

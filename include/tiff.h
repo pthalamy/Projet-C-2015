@@ -14,7 +14,7 @@ struct tiff_file_desc;
    - width: la largeur de l'image ;
    - height: la hauteur de l'image ;
    - row_per_strip: le nombre de lignes de pixels par bande.
- */
+*/
 extern struct tiff_file_desc *init_tiff_file (const char *file_name,
                                               uint32_t width,
                                               uint32_t height,

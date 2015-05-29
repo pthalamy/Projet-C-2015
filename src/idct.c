@@ -20,11 +20,10 @@ void idct_block(int32_t in[64], uint8_t out[64])
    for (uint32_t i = 0; i < 8; i++) {
       for (uint32_t j = 0; j < 8; j++) {
 	 double sum = 0;
-	 for ( uint32_t k = 0; j < 8; j++)
-	 {
-	    for ( uint32_t l = 0; k < 8; k++)
-	    {
-	       sum += C(k) * C(l) * COS(i, k) * COS(j, l) * in[8*k + l];
+	 for (uint32_t k = 0; k < 8; k++) {
+	    for (uint32_t l = 0; l < 8; l++) {
+	       sum += C(k) * C(l) * COS(i, k) * COS(j, l)
+		  * in[8*(r + k) + (c * 8 + l)];
 	    }
 	 }
 
@@ -37,29 +36,8 @@ void idct_block(int32_t in[64], uint8_t out[64])
 	 out[8 * i + j] = sum;
       }
    }
+   printf ("\n");
 }
-/*    for ( uint32_t i=0; i < 64; i++) */
-/*    { */
-/*       exp=0; */
-/*       for ( uint32_t j=0; j < 8; j++) */
-/*       { */
-/*          for ( uint32_t k=0; k < 8; k++) */
-/*          { */
-/* 	    sum += C[x] * C[y] * dct[r * 8 + x][c * 8 + y] * COS[i][x] * COS[j][y]; */
-/*             exp= exp + C(j)*C(k)*cos((2*(i/8)+1)*j*PI/16)*cos((2*(i%8)+1)*k*PI/16)*in[8*j+k]; */
-/*          } */
-/*       } */
-/*       res_32=(1/4)*exp; */
-/*       if ( res_32 > 255 ){ */
-/*          out[i]=255; */
-/*       } */
-/*          else { */
-/*             out[i]=res_32; */
-/*       } */
-/*       printf("%d \t",out[i]); */
-/*    } */
-/*   printf("\n"); */
-/* } */
 
 /* freopen("idct.raw", "wb", stdout); */
 /* int r, c, i, j, x, y; */
@@ -70,7 +48,8 @@ void idct_block(int32_t in[64], uint8_t out[64])
 /* 	    double sum = 0; */
 /* 	    for (x = 0; x < 8; x++) */
 /* 	       for (y = 0; y < 8; y++) */
-/* 		  sum += C[x] * C[y] * dct[r * 8 + x][c * 8 + y] * COS[i][x] * COS[j][y]; */
+/* 		  sum += C[x] * C[y] * dct[r * 8 + x][c * 8 + y] *
+		         COS[i][x] * COS[j][y]; */
 /* 	    sum *= 0.25; */
 /* 	    sum += 128; */
 /* 	    if (sum < 0) sum = 0; */

@@ -33,3 +33,7 @@ obj/*.o
 
 # Temporary files
 *~
+
+# Project specific files
+*.tiff
+jpeg2tiff

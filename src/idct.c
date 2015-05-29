@@ -4,7 +4,7 @@
 
 #define PI 3.14159265358979323846
 #define N 8
-#define COS(x, lambda) cos((2*x + 1)*lambda*PI/2*N)
+#define COS(x, lambda) cos(((2*x + 1)*lambda*PI)/2*N)
 
 double C(int32_t xi)
 {

@@ -67,7 +67,7 @@ void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
    /* } */
 
    for (uint32_t m=0; m<64; m++) {
-      out[m]=in[n]*quantif[n];
+      out[n]=in[m]*quantif[m];
       i=n/8;
       j=n%8;
       n=suivant_zigzag(&i, &j);

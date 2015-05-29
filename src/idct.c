@@ -22,8 +22,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
 	 double sum = 0;
 	 for (uint32_t k = 0; k < 8; k++) {
 	    for (uint32_t l = 0; l < 8; l++) {
-	       sum += C(k) * C(l) * COS(i, k) * COS(j, l)
-		  * in[8*(r + k) + (c * 8 + l)];
+	       sum += C(k) * C(l) * COS(i, k) * COS(j, l) * in[8*k + l];
 	    }
 	 }
 
@@ -36,7 +35,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
 	 out[8 * i + j] = sum;
       }
    }
-   printf ("\n");
+   /* printf ("\n"); */
 }
 
 /* freopen("idct.raw", "wb", stdout); */

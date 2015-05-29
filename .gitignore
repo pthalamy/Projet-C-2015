@@ -1,4 +1,5 @@
 # Object files
+obj/*.o
 *.ko
 *.obj
 *.elf
@@ -32,3 +33,7 @@
 
 # Temporary files
 *~
+
+# Project specific files
+*.tiff
+jpeg2tiff

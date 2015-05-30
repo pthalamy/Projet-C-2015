@@ -1,7 +1,8 @@
-#include "iqzz.h"
 #include <stdio.h>
+#include <stdint.h>
 
 int32_t suivant_zigzag(int32_t *i,int32_t *j){
+
 
 // si i+j est pair, on est en train de remonter dans la matrice
    if ((*i+*j)%2==0){
@@ -9,7 +10,7 @@ int32_t suivant_zigzag(int32_t *i,int32_t *j){
       // si on ne peut plus monter
       if (*i==0){
 	 // si on peut, on part à droite
-	 if (*j!=7){
+	 if (*j!=3){
 	    (*j)++;
 	 }
 	 // sinon on descend
@@ -19,7 +20,7 @@ int32_t suivant_zigzag(int32_t *i,int32_t *j){
       }
 
       // si on est tout à droite, on descend
-      else if (*j==7){
+      else if (*j==3){
 	 (*i)++;
       }
       // sinon on remonte sur la diagonale
@@ -34,7 +35,7 @@ int32_t suivant_zigzag(int32_t *i,int32_t *j){
       // si on ne peut pas aller plus à gauche
       if (*j==0){
 	 //si on peut descendre on le fait
-	 if (*i !=7){
+	 if (*i !=3){
 	    (*i)++;
 	 }
 	 // sinon on part à droite
@@ -44,7 +45,7 @@ int32_t suivant_zigzag(int32_t *i,int32_t *j){
       }
 
       // si on ne peut plus descendre
-      else if (*i==7){
+      else if (*i==3){
 	 (*j)++;
       }
       // sinon on continue sur la diagonale descendante
@@ -53,25 +54,35 @@ int32_t suivant_zigzag(int32_t *i,int32_t *j){
 	 (*i)++;
       }
    }
-   return (8*(*i)+*j);
+
+   return (4*(*i)+*j);
 }
 
-void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
+void iqzz_block (int32_t in[16], int32_t out[16], uint8_t quantif[16])
 {
    int32_t n=0;
    int32_t i;
    int32_t j;
 
-        /* for (n=0; n=63; n=suivant_zigzag(n/8, n%8)){ */
 
-   /* } */
 
-   for (uint32_t m=0; m<64; m++) {
-      out[n]=in[m]*quantif[m];
-      i=n/8;
-      j=n%8;
+   for (uint32_t m=0; m<16; m++) {
+      out[m]=in[n]*quantif[n];
+      i=n/4;
+      j=n%4;
       n=suivant_zigzag(&i, &j);
-
+      printf("%i \n ", n);
    }
+
+}
+
+
+int  main(void){
+   int32_t in[16];
+   int32_t out[16];
+   uint8_t quantif[16];
+
+   iqzz_block(in, out, quantif);
+   return 0;
 
 }

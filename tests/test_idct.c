@@ -4,7 +4,7 @@
 
 #define PI 3.14159265358979323846
 #define N 8
-#define COS(x, lambda) (cos(((2.*x + 1.)/2.*N)*lambda*PI))
+#define COS(x, lambda) (cos(((2. * x + 1.) * lambda * acos(-1) / 16)))
 
 double C(int32_t xi)
 {
@@ -27,9 +27,10 @@ void idct_block(int32_t in[64], uint8_t out[64])
 	 }
 
 	 printf ("%f ", sum);
-
-	 sum *= 1/4;
+	 sum *= 0.25;
+	 printf ("%f ", sum);
 	 sum += 128.;
+	 printf ("%f ", sum);
 
 	 if (sum < 0) sum = 0;
 	 if (sum > 255) sum = 255;
@@ -55,6 +56,17 @@ int main (void)
       0, 0, 0, 0, 0, 0, 0, 0
    };
 
+   int32_t f[] = {
+      -27, -168, 80, -45, -45, 16, 16, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0
+   };
+
    for (uint8_t i = 0; i < 8; i++) {
       for (uint8_t j = 0; j < 8; j++)
 	 printf ("%d ", g[i*8 + j]);
@@ -65,7 +77,7 @@ int main (void)
 
    uint8_t G[64];
 
-   idct_block (g, G);
+   idct_block (f, G);
 
    printf ("\n");
    for (uint8_t i = 0; i < 8; i++) {

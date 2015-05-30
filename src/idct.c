@@ -3,15 +3,15 @@
 #include <math.h>
 
 #define PI 3.14159265358979323846
-#define N 8
-#define COS(x, lambda) cos(((2*x + 1)*lambda*PI)/2*N)
+#define N 8.
+#define COS(x, lambda) cos(((2.*x + 1.)*lambda*PI)/2.*N)
 
 double C(int32_t xi)
 {
    if ( xi == 0 ){
-      return 1/sqrt(2);
+      return 1./sqrt(2.);
    } else {
-      return 1;
+      return 1.;
    }
 }
 
@@ -26,13 +26,14 @@ void idct_block(int32_t in[64], uint8_t out[64])
 	    }
 	 }
 
-	 sum *= 1/sqrt(2*N);
-	 sum += 128;
+	 sum *= 2/N;
+	 sum += 128.;
 
 	 if (sum < 0) sum = 0;
 	 if (sum > 255) sum = 255;
 
 	 out[8 * i + j] = sum;
+	 /* printf ("%d ", 8*i+j); */
       }
    }
    /* printf ("\n"); */

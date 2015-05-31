@@ -49,7 +49,7 @@ bool end_of_bitstream(struct bitstream *stream)
    }
 }
 
-#define BITMASK(n) (0xFFFFFFFF >> (32 - n))
+#define BITMASK(n) (0xFFFFFFFF >> (32 - (n)))
 
 uint8_t read_bitstream(struct bitstream *stream,
 		       uint8_t nb_bits, uint32_t *dest,
@@ -62,20 +62,23 @@ uint8_t read_bitstream(struct bitstream *stream,
       /* Utilisation des bits restants mis dans buf */
       /* Le buffer contient plus ou autant de bits que demandé */
       if (nb_bits <= stream->buf_len) {
-	 printf ("nb_bits %d <= buf_len %d \n", nb_bits, stream->buf_len);
+	 printf ("-> nb_bits %d <= buf_len %d \n", nb_bits, stream->buf_len);
 	 printf ("buf = 0x%x \n", stream->buf);
 	 *dest += (stream->buf >> (stream->buf_len - nb_bits)) & BITMASK(nb_bits);
-	 stream->buf &= stream->buf & BITMASK (stream->buf_len - nb_bits);
+	 stream->buf &= BITMASK (stream->buf_len - nb_bits);
+	 printf ("new buf: 0x%x = buf & 0x%x, %d, %d\n",
+		 stream->buf, BITMASK (stream->buf_len - nb_bits),
+		 stream->buf_len, nb_bits);
 	 stream->buf_len -= nb_bits;
 	 bits_lu += nb_bits;
 	 nb_bits = 0;
       } else {
-	 printf ("nb_bits %d > buf_len %d \n", nb_bits, stream->buf_len);
+	 printf ("-> nb_bits %d > buf_len %d \n", nb_bits, stream->buf_len);
 	 /* On charge d'abord les bits du buffer  */
 	 if (stream->buf_len) {
-	    *dest += (stream->buf << (nb_bits-stream->buf_len));
+	    *dest += (stream->buf << (nb_bits - stream->buf_len));
 	    printf ("dest2: 0x%x  = (0x%x << %d)\n", *dest, stream->buf,
-		    nb_bits, BITMASK(nb_bits));
+		    (nb_bits - stream->buf_len));
 	    bits_lu += stream->buf_len;
 	    nb_bits -= stream->buf_len;
 	    stream->buf = 0;
@@ -105,7 +108,7 @@ uint8_t read_bitstream(struct bitstream *stream,
       }
    }
    printf ("\ndest4: 0x%x\n", *dest);
-   printf ("====\n", *dest);
+   printf ("====\n");
 
    return bits_lu;
 }
@@ -114,7 +117,7 @@ void skip_bitstream_until(struct bitstream *stream,
 			  uint8_t byte)
 {
    printf ("skip_bitstream_until: 0x%x\n", byte);
-   uint8_t lu;
+   char lu;
 
    /* Vidage du buffer */
    stream->buf = 0;
@@ -144,38 +147,48 @@ int main(void)
    struct bitstream *bs = create_bitstream ("babilon_amphi.jpg");
    uint32_t read = 0;
 
-   /* Lecture des 4 premiers octets */
-   read_bitstream (bs, 8, &read, false);
-   read_bitstream (bs, 8, &read, false);
-   read_bitstream (bs, 8, &read, false);
-   read_bitstream (bs, 8, &read, false);
-   /* Lecture de deux octets d'un coup */
-   read_bitstream (bs, 16, &read, false);
-   read_bitstream (bs, 16, &read, false);
-   /* Lecture de trois octets d'un coup */
-   read_bitstream (bs, 24, &read, false);
-   /* Lecture de quatre octets d'un coup */
-   read_bitstream (bs, 32, &read, false);
-
-   /* Avance jusqu'à 0xffc4 */
-   skip_bitstream_until (bs, 0xc4);
-   /* Lecture de l'octet 0xc4 */
-   read_bitstream (bs, 8, &read, false);
-   /* Avance jusqu'à 0x0613 */
-   skip_bitstream_until (bs, 0x13);
-   /* Lecture de l'octet 0x13 */
-   read_bitstream (bs, 8, &read, false);
-
-   /* 5161 0722 7114 3281 91a1 0823 42b1 */
-   read_bitstream (bs, 4, &read, false); /* doit être 0x5 */
-   read_bitstream (bs, 4, &read, false); /* doit être 0x1 */
-   read_bitstream (bs, 2, &read, false); /* doit être 0x1 */
-   read_bitstream (bs, 1, &read, false); /* doit être 0x1 */
-   read_bitstream (bs, 1, &read, false); /* doit être 0x0 */
-   read_bitstream (bs, 4, &read, false); /* doit être 0x0 */
-   read_bitstream (bs, 3, &read, false); /* doit être 0x3 */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x1 *\/ */
+   /* read_bitstream (bs, 2, &read, false); /\* doit être 0x3 *\/ */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x1 *\/ */
+   /* read_bitstream (bs, 5, &read, false); /\* doit être 0x1f *\/ */
+   /* read_bitstream (bs, 5, &read, false); /\* doit être 0x1f *\/ */
+   /* read_bitstream (bs, 6, &read, false); /\* doit être 0x18 *\/ */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x01 *\/ */
+   /* read_bitstream (bs, 2, &read, false); /\* doit être 0x03 *\/ */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x01 *\/ */
+   /* read_bitstream (bs, 11, &read, false); /\* doit être 0x01 *\/ */
 
 
+   /* /\* Lecture des 4 premiers octets *\/ */
+   /* read_bitstream (bs, 8, &read, false); */
+   /* read_bitstream (bs, 8, &read, false); */
+   /* read_bitstream (bs, 8, &read, false); */
+   /* read_bitstream (bs, 8, &read, false); */
+   /* /\* Lecture de deux octets d'un coup *\/ */
+   /* read_bitstream (bs, 16, &read, false); */
+   /* read_bitstream (bs, 16, &read, false); */
+   /* /\* Lecture de trois octets d'un coup *\/ */
+   /* read_bitstream (bs, 24, &read, false); */
+   /* /\* Lecture de quatre octets d'un coup *\/ */
+   /* read_bitstream (bs, 32, &read, false); */
+
+   /* /\* Avance jusqu'à 0xffc4 *\/ */
+   /* skip_bitstream_until (bs, 0xc4); */
+   /* /\* Lecture de l'octet 0xc4 *\/ */
+   /* read_bitstream (bs, 8, &read, false); */
+   /* /\* Avance jusqu'à 0x0613 *\/ */
+   /* skip_bitstream_until (bs, 0x13); */
+   /* /\* Lecture de l'octet 0x13 *\/ */
+   /* read_bitstream (bs, 8, &read, false); */
+
+   /* /\* 5161 0722 7114 3281 91a1 0823 42b1 *\/ */
+   /* read_bitstream (bs, 4, &read, false); /\* doit être 0x5 *\/ */
+   /* read_bitstream (bs, 4, &read, false); /\* doit être 0x1 *\/ */
+   /* read_bitstream (bs, 2, &read, false); /\* doit être 0x1 *\/ */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x1 *\/ */
+   /* read_bitstream (bs, 1, &read, false); /\* doit être 0x0 *\/ */
+   /* read_bitstream (bs, 4, &read, false); /\* doit être 0x0 *\/ */
+   /* read_bitstream (bs, 3, &read, false); /\* doit être 0x3 *\/ */
 
    free_bitstream (bs);
 

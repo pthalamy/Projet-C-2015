@@ -71,15 +71,20 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
    /*nombre de colonnes de l'image*/
    tfd->width = width;
+   printf ("tfd->width = %d\n",tfd->width);
    /*nombre de lignes de l'image*/
    tfd->height = height;
-   put("tfd->height\n",%d);
+   printf ("tfd->height = %d\n",tfd->height);
    /*hauteur (en pixels) es lignes TIFF*/
    tfd->row_per_strip=row_per_strip;
+   printf ("tfd->row_per_strip = %d\n",tfd->row_per_strip);
    /* Calcul du nombre de strip */
    uint32_t nb_strips = tfd->height / tfd->row_per_strip;
+   printf ("nb_strips = %d\n", nb_strips);
+
    /*calcul de la taille (en octets) des lignes*/
-   uint32_t strip_byte_count=3*row_per_strip*height;
+   uint32_t strip_byte_count = 3*row_per_strip*width;
+   printf ("strip_byte_count = %d\n", strip_byte_count);
 
    /* Ecriture du header */
    uint8_t buffer[8]={0x4D, 0x4D, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08};
@@ -105,9 +110,11 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    tiff_write_entry(tfd->tiff, PHOTOMETRIC_INTERPRETATION, SHORT, 1, 0x20000);
 
    /*STRIP_OFFSET*/
-   if (nb_strips < 3)
+   if (nb_strips == 1)
+      tiff_write_entry(tfd->tiff, STRIP_OFFSET, SHORT, 1, 0xb4 << 16);
+   else if (nb_strips == 2)
       tiff_write_entry(tfd->tiff, STRIP_OFFSET, SHORT, 2, 0xb40174);
-   else 
+   else
       tiff_write_entry(tfd->tiff, STRIP_OFFSET, LONG, 1, 0xb4);
 
    /*SAMPLE_PER_PIXEL*/
@@ -143,10 +150,10 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    /*YResolution*/
    fput32b(tfd->tiff, 0x64);
    fput32b(tfd->tiff, 0x1);
-   
-   if (nb_strips > 2) 
-      for(uint32_t i=0; i < tfd->height; i++){
-         fput16b(tfd->tiff, (0xb4+2*tfd->height)+i*strip_byte_count);
+
+   if (nb_strips > 2)
+      for(uint32_t i=0; i < nb_strips; i++){
+         fput16b(tfd->tiff, (0xb4+2*nb_strips) + i*strip_byte_count);
       }
 
    return tfd;
@@ -179,15 +186,19 @@ int main(void)
    for (uint32_t i=0; i < 8*32; i++){
       RGB[i]=0xff0000;
    }
-   struct tiff_file_desc *tfd = init_tiff_file("gros_lee.tiff",8,32,8);
+
+   struct tiff_file_desc *tfd = init_tiff_file("gros_lee.tiff", 8, 32,8);
+
    for (uint32_t i = 0; i < 8*32; i++) {
       fputc ((RGB[i] >> 16) & 0xff, tfd->tiff);
-      printf("Ox%x\n",(RGB[i] >> 16) & 0xff);
+      printf("0x%x ",(RGB[i] >> 16) & 0xff);
       fputc ((RGB[i] >> 8) & 0xff, tfd->tiff);
-      printf("Ox%x\n",(RGB[i] >> 8) & 0xff);
+      printf("0x%x ",(RGB[i] >> 8) & 0xff);
       fputc (RGB[i] & 0xff, tfd->tiff);
-      printf("0x%x\n",RGB[i] & 0xff);
-}       
+      printf("0x%x ",RGB[i] & 0xff);
+}
+
+   printf ("\n");
    close_tiff_file(tfd);
 
    return 0;

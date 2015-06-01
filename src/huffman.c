@@ -48,6 +48,7 @@ struct huff_table *load_huffman_table(
    *nb_byte_read = 0;
 
    struct huff_table *huff = malloc (sizeof(struct huff_table));
+   printf("alloc huff table");
    if (!huff) {
       *nb_byte_read = -1;
       return NULL;
@@ -89,7 +90,7 @@ struct huff_table *load_huffman_table(
    struct abr *tab [256] ;
    for (uint32_t i=0; i<256; i++) {
    tab[i]= NULL;
-}
+   }
 
    // on cherche la longueur max des symboles a coder
    uint8_t i = 15;
@@ -122,7 +123,11 @@ struct huff_table *load_huffman_table(
       uint8_t k =0;
       for(uint8_t j=0;j<nb_symb_codes; j=j+2){
 	 struct abr *temp=malloc (sizeof(struct abr));
-	 if (temp==NULL); exit(1);
+	 printf("alloc temp 1 ");
+	 if (temp==NULL)
+
+	    exit(1);
+
 	 temp->gauche=tab[j];
 	 temp->droite=tab[j+1];
 	 tab[k]=temp;
@@ -135,24 +140,66 @@ struct huff_table *load_huffman_table(
 
       for (uint8_t j=0; j< nb_lg_max; j++) {
 	 struct abr *temp=malloc(sizeof (struct abr));
-	 if (temp==NULL); exit(1);
+	 printf("alloc temp");
+	 if (temp==NULL){
+	    printf("sortie erreur alloc temp");
+	    exit(1);
+	 }
+
 	 temp -> gauche=NULL;
 	 temp -> droite = NULL;
 	 temp->sym = symboles[nb_symb-nb_symb_codes+j];
 	 tab[k]=temp ;
 	 k++;
+	 nb_symb_codes= nb_symb_codes+nb_lg_max ;
       }
 
 
   }
-   return tab[1]; // attention il faur retourner une huff table et non pas un arbre
+   return tab[1]; // attention il faut retourner une huff table et non pas un arbre
 }
+
+void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, struct bitstream *stream){
+
+   bool byte_stuffing= false;
+
+   if (arbre==NULL) {
+      printf("arbre null");
+      return ;
+   }
+   else if ((arbre -> gauche ==NULL)&(arbre->droite ==NULL)){
+      *symbole = arbre -> sym;
+      printf("feuille atteinte");
+      return ;
+   }
+   else {
+      uint8_t suivant=read_bitstream(stream, 1, &direction, byte_stuffing);
+
+      if (direction==1){
+	 rec_parcours_abr(arbre->gauche,direction , symbole, stream);
+      }
+      else if (direction==0){
+	 rec_parcours_abr(arbre->droite,direction, symbole, stream);
+      }
+      else {
+	 printf("erreur dans la lecture bit !=0ou1");
+	 exit(1);
+      }
+   }
+
+}
+
 
 
 int8_t next_huffman_value(struct huff_table *table,
 			  struct bitstream *stream)
 {
-   exit(1);
+   uint32_t direction;
+   uint8_t symb ;
+   uint8_t suiv=read_bitstream(stream, 1, &direction, false);
+   rec_parcours_abr(table->huff_tree, direction, &symb,  stream );
+
+
 }
 
 void free_huffman_table(struct huff_table *table)

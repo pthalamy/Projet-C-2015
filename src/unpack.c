@@ -58,7 +58,7 @@ void unpack_block(struct bitstream *stream,
 // récupération de la magnitude
    uint8_t magnitude = next_huffman_value(table_DC,stream);
 
-   int32_t dc = decode_magnitude(stream, magnitude) - *pred_DC;
+   int32_t dc = decode_magnitude(stream, magnitude) + *pred_DC;
    printf ("-> dc : m = %d  |  %d\n", magnitude, dc);
    bloc[0]=dc;
 

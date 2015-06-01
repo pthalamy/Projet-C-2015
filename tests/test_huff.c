@@ -61,6 +61,57 @@ void libere_huffman (struct abr *huff)
 }
 
 
+
+
+// insertion à la profondeur prof, le plus a gauche possible
+// renvoie une booléen qui permet de savoir si l'insertion a réussi
+bool insertion_gauche( struct abr **abr, uint8_t prof, uint8_t symbole){
+
+   // insertion juste en dessous de la racine
+   if (prof==1){
+      if ((*abr)==NULL){
+	 printf("abr null \n ");
+	 return false ;
+      }
+      if ((*abr)->gauche==NULL){
+	 (*abr)->gauche= malloc(sizeof(struct abr));
+	 (*abr) -> gauche ->sym = symbole ;
+	 (*abr)->gauche ->est_feuille=true;
+	 (*abr)->gauche->gauche=NULL;
+	 (*abr)->gauche->droite=NULL;
+	 return true;
+      }
+      else if ((*abr)->droite ==NULL){
+	 (*abr) -> droite= malloc (sizeof (struct abr));
+	 (*abr)->droite ->sym= symbole ;
+	 (*abr)->droite->est_feuille=true;
+	 (*abr)->droite->gauche=NULL;
+	 (*abr)->droite->droite=NULL;
+	 return true;
+      }
+      else {
+	 printf("niveau plein \n ");
+	 return false ;
+      }
+   }
+
+   else {
+      if (insertion_gauche(&((*abr)->gauche), prof-1, symbole)){
+	 printf("true g \n");
+	 return true; }
+
+      else if (insertion_gauche(&((*abr)->droite), prof-1, symbole)){
+	 printf("true d \n");
+	 return true;
+      }
+      else {
+	 return false ;
+      }
+   }
+
+}
+
+
 int main(void)
 {
    struct abr *ht = malloc (sizeof(struct abr));
@@ -81,6 +132,9 @@ int main(void)
    ht->droite->droite->sym = 0x33;
 
    affiche_huffman (ht);
+   printf("insertion \n");
+   insertion_gauche(&ht, 3, 0x12);
+   affiche_huffman(ht);
    libere_huffman (ht);
 
    return 0;

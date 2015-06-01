@@ -56,7 +56,7 @@ void unpack_block(struct bitstream *stream,
 
    *pred_DC = dc;
 
-   printf ("-> dc : m = %d  |  %d\n", magnitude, dc);
+   /* printf ("-> dc : m = %d  |  %d\n", magnitude, dc); */
    bloc[0] = dc;
 
 // Decodage de AC (x63)
@@ -70,14 +70,14 @@ void unpack_block(struct bitstream *stream,
       // si on lit un caractère de fin de bloc
       // on remplit la fin du bloc avec des 0
       if (symbole == EOB) {
-	 printf ("EOB !\n");
+	 /* printf ("EOB !\n"); */
 	 for (uint8_t j = i ; j < 64; j++) {
 	    bloc[j] = 0;
 	 }
 
 	 return;
       } else if (symbole == ZRL) {
-	 printf ("ZRL !\n");
+	 /* printf ("ZRL !\n"); */
 	 for (uint8_t j = 0; j < 16; j++) {
 	    bloc[i+j] = 0;
 	 }
@@ -97,7 +97,7 @@ void unpack_block(struct bitstream *stream,
 
 	 // on lit le coefficient
 	 bloc[i] =  decode_magnitude(stream,magnitude);
-	 printf ("-> ac%d : m = %d  |  %d\n", i, magnitude, bloc[i]);
+	 /* printf ("-> ac%d : m = %d  |  %d\n", i, magnitude, bloc[i]); */
 	 i++;
       }
    }

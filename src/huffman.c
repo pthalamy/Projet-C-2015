@@ -25,6 +25,48 @@ struct huff_table {
 
 
 
+// insertion à la profondeur prof, le plus a gauche possible
+// renvoie une booléen qui permet de savoir si l'insertion a réussi
+bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
+
+   // insertion juste en dessous de la racine
+   if (prof==1){
+      if (abr==NULL){
+	 printf("abr null \n ");
+	 return false ;
+      }
+      if (abr->gauche==NULL){
+	 abr->gauche= malloc(sizeof(struct abr));
+	 abr -> gauche ->sym = symbole ;
+	 return true;
+      }
+      else if (abr->droite ==NULL){
+	 abr -> droite= malloc (sizeof (struct abr));
+	 abr->droite ->sym= symbole ;
+	 return true;
+      }
+      else {
+	 printf("niveau plein \n ");
+	 return false ;
+      }
+   }
+
+   else {
+      if (insertion_gauche(abr->gauche, prof-1, symbole)){
+	 return true; }
+
+      else if (insertion_gauche(abr->droite, prof-1, symbole)){
+	 return true;
+      }
+      else {
+	 return false ;
+      }
+   }
+
+}
+
+
+
 /* void construire_arbre (struct abr *huff_tree, */
 /* 		       uint8_t *sym, */
 /* 		       uint8_t *symOfLen, */
@@ -84,79 +126,42 @@ struct huff_table *load_huffman_table(
 
    printf ("\n");
 
+// Construction de l'arbre
 
-
-   // création tableau de 256 *abr, rempli de null
-   struct abr *tab [256] ;
-   for (uint32_t i=0; i<256; i++) {
-   tab[i]= NULL;
+   //Calcul de la longueur maximale
+   uint8_t lg_max ;
+   uint8_t i=15 ;
+   while(symbOfLen[i]==0){
+      i--;
    }
+   lg_max =i;
 
-   // on cherche la longueur max des symboles a coder
-   uint8_t i = 15;
-   while (symbOfLen[i]==0){
-   i--;
-}
+   //Remplissage de l'arbre niveau par niveau
 
-   uint32_t lg_max =i;
-   uint32_t nb_lg_max = symbOfLen[i];
+   uint8_t compteur_symbole; // nb de symboles insérés sur une prof
+   uint8_t compteur_table=0; // nb de symboles a insérer sur une prof
 
-   uint32_t nb_symb_codes=0;
+   uint8_t nb_symb_codes=0;
 
+   for (uint8_t j =0; j< lg_max; j++ ){
+      compteur_table= symbOfLen[j];
+      compteur_symbole=0;
 
-   // parcours du tableau de symboles par la fin.
-   // création de nouveaux noeuds
-   for (uint32_t j=0; j<lg_max; j++) {
-   tab[j]=malloc(sizeof(struct abr));
-   tab[j]->sym=symboles[nb_symb-nb_lg_max+j];
-   tab[j]->gauche = NULL;
-   tab[j]->droite= NULL;
-}
+      while(compteur_symbole !=compteur_table){
+	bool  insert= insertion_gauche(huff->huff_tree, j+1,symboles[nb_symb_codes]);
 
-   nb_symb_codes=nb_symb_codes+nb_lg_max ;
-
-
-// tant que tout n'a pas été codé
-   while (nb_symb_codes!=nb_symb) {
-
-      // regroupement des noeuds par deux pour former l'étage au dessus
-      uint8_t k =0;
-      for(uint8_t j=0;j<nb_symb_codes; j=j+2){
-	 struct abr *temp=malloc (sizeof(struct abr));
-	 printf("alloc temp 1 ");
-	 if (temp==NULL)
-
-	    exit(1);
-
-	 temp->gauche=tab[j];
-	 temp->droite=tab[j+1];
-	 tab[k]=temp;
-	 k++;
-      };
-
-      // ajout des nouvelles feuilles
-      lg_max--;
-      nb_lg_max=symbOfLen[lg_max];
-
-      for (uint8_t j=0; j< nb_lg_max; j++) {
-	 struct abr *temp=malloc(sizeof (struct abr));
-	 printf("alloc temp");
-	 if (temp==NULL){
-	    printf("sortie erreur alloc temp");
-	    exit(1);
-	 }
-
-	 temp -> gauche=NULL;
-	 temp -> droite = NULL;
-	 temp->sym = symboles[nb_symb-nb_symb_codes+j];
-	 tab[k]=temp ;
-	 k++;
-	 nb_symb_codes= nb_symb_codes+nb_lg_max ;
+	if (insert) {
+	compteur_symbole++;
+	 nb_symb_codes++;
       }
 
 
-  }
-   return tab[1]; // attention il faut retourner une huff table et non pas un arbre
+   }
+
+
+
+}
+   return huff;
 }
 
 void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, struct bitstream *stream){
@@ -174,6 +179,7 @@ void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, s
    }
    else {
       uint8_t suivant=read_bitstream(stream, 1, &direction, byte_stuffing);
+      (void) suivant;
 
       if (direction==1){
 	 rec_parcours_abr(arbre->gauche,direction , symbole, stream);
@@ -197,8 +203,9 @@ int8_t next_huffman_value(struct huff_table *table,
    uint32_t direction;
    uint8_t symb ;
    uint8_t suiv=read_bitstream(stream, 1, &direction, false);
+   (void)suiv;
    rec_parcours_abr(table->huff_tree, direction, &symb,  stream );
-
+   return symb;
 
 }
 

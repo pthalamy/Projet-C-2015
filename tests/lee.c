@@ -15,7 +15,7 @@
 #define IMAGE_LENGTH 	 				 0x0101
 #define BITS_PER_SAMPLE 	 			 0x0102
 #define COMPRESSION  	 			         0x0103
-#define PHOTOMETRIC_INTERPRETATION                       0x0106
+#define PHOTOMETRIC_INTERPRETATION       0x0106
 #define STRIP_OFFSET  	 			         0x0111
 #define SAMPLE_PER_PIXEL  	 			 0x0115
 #define ROWS_PER_STRIP  	 			 0x0116
@@ -23,7 +23,6 @@
 #define X_RESOLUTION  	 			         0x011a
 #define Y_RESOLUTION  	 			         0x011b
 #define RESOLUTION_UNIT  	 			 0x0128
-#define SOFTWARE  	 		   	  	 0x0131
 
 /* Structure permettant de stocker les informations nécessaire à
  * l'écriture des données de l'image dans un fichier TIFF. */
@@ -38,15 +37,15 @@ struct tiff_file_desc
 void fput16b(FILE *fp,  uint16_t v)
 {
    fputc((v >> 8), fp);
-   fputc((v & 0x0f), fp);
+   fputc((v & 0xff), fp);
 }
 
-void fput32b(FILE *fp,  uint16_t v)
+void fput32b(FILE *fp,  uint32_t v)
 {
    fputc((v >> 24), fp);
    fputc((v >> 16), fp);
    fputc((v >> 8), fp);
-   fputc((v & 0x0f), fp);
+   fputc((v & 0xff), fp);
 }
 
 void tiff_write_entry(FILE *fp, uint16_t tag, uint16_t type, uint32_t nb_val, uint32_t val)
@@ -82,43 +81,44 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    fput16b (tfd->tiff, NUM_ENTRIES);
    /* Ecriture des entrees */
    /*IMAGE_WIDTH*/
-   if ((tfd->width >> 16) == 0 )
-      tiff_write_entry(tfd->tiff, IMAGE_WIDTH, SHORT, 1, tfd->width << 16);
-   else
-      tiff_write_entry(tfd->tiff, IMAGE_WIDTH, LONG, 1, tfd->width);
+   tiff_write_entry(tfd->tiff, IMAGE_WIDTH, LONG, 1, tfd->width);
+
    /*IMAGE_LENGHT*/
-   if ((tfd->height >> 16) == 0 )
-      tiff_write_entry(tfd->tiff, IMAGE_LENGTH, SHORT, 1, tfd->height << 16);
-   else
-      tiff_write_entry(tfd->tiff, IMAGE_LENGTH, LONG, 1, tfd->height);
-   /*BITS_PER_SAMPLE*/ 
+   tiff_write_entry(tfd->tiff, IMAGE_LENGTH, LONG, 1, tfd->height);
+
+   /*BITS_PER_SAMPLE*/
    tiff_write_entry(tfd->tiff, BITS_PER_SAMPLE, SHORT, 3, 0x9e);
-   /*COMPRESSION*/  	 	
-   tiff_write_entry(tfd->tiff, COMPRESSION, SHORT, 1, 1);
+
+   /*COMPRESSION*/
+   tiff_write_entry(tfd->tiff, COMPRESSION, SHORT, 1, 1 << 16);
+
    /*PHOTOMETRIC_INTERPRETATION*/
    tiff_write_entry(tfd->tiff, PHOTOMETRIC_INTERPRETATION, SHORT, 1, 0x20000);
-   /*STRIP_OFFSET*/  	
+
+   /*STRIP_OFFSET*/
+   /* Calcul du nombre de strip */
+   uint32_t nb_strips = tfd->height / tfd->rows_per_strip;
+   if (nb_strips < 2)
+      tiff_write_entry(tfd->tiff, STRIP_OFFSET, SHORT, 1, 0x);
+
    /*SAMPLE_PER_PIXEL*/
-   tiff_write_entry(tfd->tiff, SAMPLE_PER_PIXEL, SHORT, 1, 0x3);
+   tiff_write_entry(tfd->tiff, SAMPLE_PER_PIXEL, LONG, 1, 0x3);
+
    /*ROWS_PER_STRIP*/
-   if ((tfd->row_per_strip>> 16) == 0 )
-      tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, SHORT, 1, tfd->row_per_strip << 16);
-   else
-      tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, LONG, 1, tfd->row_per_strip);
+   tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, LONG, 1, tfd->row_per_strip);
 
    /*STRIP_BYTE_COUNTS*/
-   /*X_RESOLUTION*/	 		
+   /*X_RESOLUTION*/
    tiff_write_entry(tfd->tiff, X_RESOLUTION, RATIONNAL, 1, 0xa4);
-   /*Y_RESOLUTION*/ 
+
+   /*Y_RESOLUTION*/
    tiff_write_entry(tfd->tiff, Y_RESOLUTION, RATIONNAL, 1, 0xac);
 
    /*RESOLUTION_UNIT*/
    tiff_write_entry(tfd->tiff, RESOLUTION_UNIT, SHORT, 1, 0x20000);
 
-
+   /* OFFSET SUIVANT */
    fput16b (tfd->tiff, OFFSET_SUIV);
-
-
 
    return tfd;
 }

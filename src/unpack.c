@@ -39,13 +39,15 @@ void unpack_block(struct bitstream *stream,
 		  struct huff_table *table_AC,
 		  int32_t bloc[64])
 {
-   // Decodage de DC
+
    if (stream == NULL)
       return;
    if (table_DC == NULL)
       return;
    if (table_AC == NULL)
       return;
+
+//Decodage de DC
 
 // récupération de la magnitude
    uint8_t magnitude = next_huffman_value(table_DC,stream);

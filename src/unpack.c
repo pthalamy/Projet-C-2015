@@ -40,12 +40,18 @@ void unpack_block(struct bitstream *stream,
 		  int32_t bloc[64])
 {
 
-   if (stream == NULL)
+   if (stream == NULL){
+      printf("stream null \n ");
       return;
-   if (table_DC == NULL)
+   }
+   if (table_DC == NULL){
+      printf ("DC null \n");
       return;
-   if (table_AC == NULL)
+   }
+   if (table_AC == NULL){
+      printf("AC null \n");
       return;
+   }
 
 //Decodage de DC
 
@@ -81,14 +87,13 @@ void unpack_block(struct bitstream *stream,
 
 	 i += 16;
       } else {
-	 // on récupère le nombre de zéros et on remplit le bloc
-	 nb_zeros = (symbole >> 4) & 0x0F;
-	 for (uint8_t j = 0; j < nb_zeros;  j++) {
-	    bloc[i+j] = 0;
-	 }
-	 i += nb_zeros ;
 
-	 // on récupère la magnitude du symbole
+	 nb_zeros=(symbole >>4) & 0x0F;
+	 for (uint8_t j=0; j<nb_zeros; j++){
+	    bloc[i+j]=0;
+	 }
+	 i+=nb_zeros;
+
 	 magnitude = (symbole & 0x0F);
 
 	 // on lit le coefficient

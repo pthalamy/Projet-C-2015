@@ -1,5 +1,9 @@
 #include "tiff.h"
 
+#define NUM_ENTREES 12
+#define put_16b(f, v) (fputc((f), ((v) >> 8)); fputc((f), ((v) & 0x0f)))
+
+
 /* Structure permettant de stocker les informations nécessaire à
  * l'écriture des données de l'image dans un fichier TIFF. */
  struct tiff_file_desc
@@ -8,7 +12,7 @@
    uint32_t height;
    uint32_t row_per_strip;
    FILE *tiff;
-}; 
+};
 
 /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
    - width: la largeur de l'image ;
@@ -24,9 +28,16 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    tfd->tiff=fopen(file_name,"w");
    tfd->width=width;
    tfd->height=height;
+
+   /* Ecriture du header */
    tfd->row_per_strip=row_per_strip;
    uint8_t buffer[8]={0x4D, 0x4D, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08}
    fwrite(buffer, 1, 8, tfd->tiff);
+
+   /* Ecriture de l'IFD */
+/* Nombre d'entrées */
+f
+
    return tfd;
 }
 
@@ -48,5 +59,5 @@ int32_t write_tiff_file (struct tiff_file_desc *tfd,
 			 uint8_t nb_blocks_h,
 			 uint8_t nb_blocks_v)
 {
-   
+
 }

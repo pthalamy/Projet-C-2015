@@ -14,16 +14,46 @@ enum AC_DC {
 
 struct abr {
    uint32_t sym;
+   bool est_feuille;
    struct abr *gauche, *droite;
 };
 
 struct huff_table {
-   enum AC_DC type;
-   uint8_t ind;
    struct abr *huff_tree;
 };
 
 
+void affiche_huffman_rec (struct abr *huff, uint8_t code[16], uint8_t nbits)
+{
+   /* Huff est une feuille, affichage du code et de la valeur du noeud */
+   if (huff->est_feuille) {
+      for (uint8_t i = 0; i < nbits; i++)
+	 printf ("%d", code[i]);
+
+      printf (" -> 0x%x\n", huff->sym);
+   } else {
+      /* Visite fils gauche */
+      if (huff->gauche) {
+	 code[nbits] = 0;
+	 affiche_huffman_rec (huff->gauche, code, nbits+1);
+      }
+
+      /* Visite fils droit */
+      if (huff->droite) {
+	 code[nbits] = 1;
+	 affiche_huffman_rec (huff->droite, code, nbits+1);
+      }
+   }
+}
+
+void affiche_huffman (struct abr *huff)
+{
+   if (huff) {
+      uint8_t code[16];
+      uint8_t nbits = 0;
+      affiche_huffman_rec (huff, code, nbits);
+   }
+}
 
 // insertion à la profondeur prof, le plus a gauche possible
 // renvoie une booléen qui permet de savoir si l'insertion a réussi
@@ -209,7 +239,25 @@ int8_t next_huffman_value(struct huff_table *table,
 
 }
 
+void libere_huffman (struct abr *huff)
+{
+   if (huff) {
+      /* libere sous-arbre gauche */
+      if (huff->gauche) {
+	 libere_huffman (huff->gauche);
+      }
+
+      /* Libere sous-arbre droit */
+      if (huff->droite) {
+	 libere_huffman (huff->droite);
+      }
+
+      free (huff);
+      huff = NULL;
+   }
+}
+
 void free_huffman_table(struct huff_table *table)
 {
-
+   /* libere_huffman (table->huff_tree); */
 }

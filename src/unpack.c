@@ -24,7 +24,7 @@ int32_t decode_magnitude(struct bitstream *stream, uint8_t magnitude)
 
    // on décode la valeur dans la classe de magnitude
    uint8_t premier_bit = dest >> (magnitude-1);
-   if (premier_bit == 1 || !dest){
+   if (premier_bit == 1){
       return dest ;
    }  else {
       printf ("-> ac' : m = %d  |  0x%x -> %d\n", magnitude, dest, dest - (BITMASK(magnitude)));
@@ -65,14 +65,14 @@ void unpack_block(struct bitstream *stream,
       // si on lit un caractère de fin de bloc
       // on remplit la fin du bloc avec des 0
       if (symbole == EOB) {
-	 printf ("EOB !\n");
+	 /* printf ("EOB !\n"); */
 	 for (uint8_t j = i ; j < 64; j++) {
 	    bloc[j] = 0;
 	 }
 
 	 return;
       } else if (symbole == ZRL) {
-	 printf ("ZRL !\n");
+	 /* printf ("ZRL !\n"); */
 	 for (uint8_t j = 0; j < 16; j++) {
 	    bloc[i+j] = 0;
 	 }
@@ -92,6 +92,8 @@ void unpack_block(struct bitstream *stream,
 	 // on lit le coefficient
 	 bloc[i] = decode_magnitude(stream,magnitude);
 	 printf ("-> ac%d : m = %d  |  %d\n", i, magnitude, bloc[i]);
+	 if (!bloc[i])
+	    exit (1);
 	 i++;
       }
    }

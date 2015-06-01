@@ -57,6 +57,7 @@ void affiche_huffman (struct abr *huff)
 
 // insertion à la profondeur prof, le plus a gauche possible
 // renvoie une booléen qui permet de savoir si l'insertion a réussi
+// prérequis : profondeur inf ou égale à lg max !!!!
 bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
 
    // insertion juste en dessous de la racine
@@ -120,7 +121,7 @@ struct huff_table *load_huffman_table(
    *nb_byte_read = 0;
 
    struct huff_table *huff = malloc (sizeof(struct huff_table));
-   printf("alloc huff table");
+   printf("alloc huff table \n");
    if (!huff) {
       *nb_byte_read = -1;
       return NULL;
@@ -168,19 +169,31 @@ struct huff_table *load_huffman_table(
 
    //Remplissage de l'arbre niveau par niveau
 
+   printf("remplissage arbre \n");
    uint8_t compteur_symbole; // nb de symboles insérés sur une prof
    uint8_t compteur_table=0; // nb de symboles a insérer sur une prof
 
    uint8_t nb_symb_codes=0;
 
+   printf("nb tot symb: %i \n", nb_symb);
+   printf ("longueur max, %i \n ", lg_max);
+   printf("entrée boucle for \n");
+
    for (uint8_t j =0; j< lg_max; j++ ){
+      printf("nb symboles codés : %i \n", nb_symb_codes);
+
       compteur_table= symbOfLen[j];
+
       compteur_symbole=0;
 
       while(compteur_symbole !=compteur_table){
+
+	 affiche_huffman(huff->huff_tree);
+	 printf("insertion arbre \n");
 	bool  insert= insertion_gauche(huff->huff_tree, j+1,symboles[nb_symb_codes]);
 
 	if (insert) {
+	   printf("insertion réussie \n");
 	compteur_symbole++;
 	 nb_symb_codes++;
       }

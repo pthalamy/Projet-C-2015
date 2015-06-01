@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "tiff.h"
-
 #define NUM_ENTRIES 0x000c
+#define OFFSET_SUIV 0x0000
 
 /* TYPES DE DONNEES */
 #define SHORT							 0x0003
@@ -15,16 +14,16 @@
 #define IMAGE_WIDTH 	 				 0x0100
 #define IMAGE_LENGTH 	 				 0x0101
 #define BITS_PER_SAMPLE 	 			 0x0102
-#define COMPRESSIO  	 			         0x0103
-#define PHOTOMETRIC_INTERPRETATION   0x0106
+#define COMPRESSION  	 			         0x0103
+#define PHOTOMETRIC_INTERPRETATION                       0x0106
 #define STRIP_OFFSET  	 			         0x0111
 #define SAMPLE_PER_PIXEL  	 			 0x0115
 #define ROWS_PER_STRIP  	 			 0x0116
-#define STRIP_BYTE_COUNTS  	 		 0x0117
+#define STRIP_BYTE_COUNTS  	 		         0x0117
 #define X_RESOLUTION  	 			         0x011a
 #define Y_RESOLUTION  	 			         0x011b
 #define RESOLUTION_UNIT  	 			 0x0128
-#define SOFTWARE  	 			  	 	 0x0131
+#define SOFTWARE  	 		   	  	 0x0131
 
 /* Structure permettant de stocker les informations nécessaire à
  * l'écriture des données de l'image dans un fichier TIFF. */
@@ -62,35 +61,64 @@ void tiff_write_entry(FILE *fp, uint16_t tag, uint16_t type, uint32_t nb_val, ui
    - width: la largeur de l'image ;
    - height: la hauteur de l'image ;
    - row_per_strip: le nombre de lignes de pixels par bande.
-*/
+   */
 struct tiff_file_desc *init_tiff_file (const char *file_name,
-				       uint32_t width,
-				       uint32_t height,
-				       uint32_t row_per_strip)
+      uint32_t width,
+      uint32_t height,
+      uint32_t row_per_strip)
 {
    struct tiff_file_desc *tfd = malloc (sizeof(struct tiff_file_desc));
    tfd->tiff = fopen(file_name,"w");
    tfd->width = width;
    tfd->height = height;
+   tfd->row_per_strip=row_per_strip;
 
    /* Ecriture du header */
-   tfd->row_per_strip=row_per_strip;
    uint8_t buffer[8]={0x4D, 0x4D, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08};
    fwrite(buffer, 1, 8, tfd->tiff);
 
    /* Ecriture de l'IFD */
    /* Nombre d'entrées */
    fput16b (tfd->tiff, NUM_ENTRIES);
-   /* Ecriture des entries */
+   /* Ecriture des entrees */
+   /*IMAGE_WIDTH*/
    if ((tfd->width >> 16) == 0 )
-      tiff_write_entry(tfd->tiff, IMAGE_WIDTH, SHORT, 1, tfd->width);
+      tiff_write_entry(tfd->tiff, IMAGE_WIDTH, SHORT, 1, tfd->width << 16);
    else
       tiff_write_entry(tfd->tiff, IMAGE_WIDTH, LONG, 1, tfd->width);
-
+   /*IMAGE_LENGHT*/
    if ((tfd->height >> 16) == 0 )
-      tiff_write_entry(tfd->tiff, IMAGE_LENGTH, SHORT, 1, tfd->height);
+      tiff_write_entry(tfd->tiff, IMAGE_LENGTH, SHORT, 1, tfd->height << 16);
    else
       tiff_write_entry(tfd->tiff, IMAGE_LENGTH, LONG, 1, tfd->height);
+   /*BITS_PER_SAMPLE*/ 
+   tiff_write_entry(tfd->tiff, BITS_PER_SAMPLE, SHORT, 3, 0x9e);
+   /*COMPRESSION*/  	 	
+   tiff_write_entry(tfd->tiff, COMPRESSION, SHORT, 1, 1);
+   /*PHOTOMETRIC_INTERPRETATION*/
+   tiff_write_entry(tfd->tiff, PHOTOMETRIC_INTERPRETATION, SHORT, 1, 0x20000);
+   /*STRIP_OFFSET*/  	
+   /*SAMPLE_PER_PIXEL*/
+   tiff_write_entry(tfd->tiff, SAMPLE_PER_PIXEL, SHORT, 1, 0x3);
+   /*ROWS_PER_STRIP*/
+   if ((tfd->row_per_strip>> 16) == 0 )
+      tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, SHORT, 1, tfd->row_per_strip << 16);
+   else
+      tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, LONG, 1, tfd->row_per_strip);
+
+   /*STRIP_BYTE_COUNTS*/
+   /*X_RESOLUTION*/	 		
+   tiff_write_entry(tfd->tiff, X_RESOLUTION, RATIONNAL, 1, 0xa4);
+   /*Y_RESOLUTION*/ 
+   tiff_write_entry(tfd->tiff, Y_RESOLUTION, RATIONNAL, 1, 0xac);
+
+   /*RESOLUTION_UNIT*/
+   tiff_write_entry(tfd->tiff, RESOLUTION_UNIT, SHORT, 1, 0x20000);
+
+
+   fput16b (tfd->tiff, OFFSET_SUIV);
+
+
 
    return tfd;
 }
@@ -109,11 +137,11 @@ void close_tiff_file(struct tiff_file_desc *tfd)
  * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
  * en horizontal et en vertical. */
 int32_t write_tiff_file (struct tiff_file_desc *tfd,
-			 uint32_t *mcu_rgb,
-			 uint8_t nb_blocks_h,
-			 uint8_t nb_blocks_v)
+      uint32_t *mcu_rgb,
+      uint8_t nb_blocks_h,
+      uint8_t nb_blocks_v)
 {
-
+   return 0;
 }
 
 int main(void)

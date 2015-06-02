@@ -88,5 +88,7 @@ int  main(void){
    uint8_t *out3=malloc(32*sizeof(uint8_t));
    printf("juxtaposition horizontale \n") ;
    affiche_tab(juxtaposition_horizontale(tab2, out3), 8,4);
+
+   free(out); free(out2); free(out3);
    return 0;
 }

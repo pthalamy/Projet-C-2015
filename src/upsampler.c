@@ -3,44 +3,50 @@
 #include <stdlib.h>
 
 // prérequis: bloc de taille 64
-uint8_t *dilatation_ligne(uint8_t *bloc){
-   uint8_t *new_bloc=malloc(128*sizeof(uint8_t));
+//(8*8)->(16*8)
+uint8_t *dilatation_ligne(uint8_t *bloc, uint8_t *out){
+
    for(uint8_t i=0; i<128; i++){
-      new_bloc[i]=bloc[i/2];
+      out[i]=bloc[i/2];
    }
-   return  new_bloc ;
+   return  out ;
 }
 
-// prérequis : bloc de taille 128 ( 8*16 )
-uint8_t *dilatation_colonne(uint8_t *bloc){
-   uint8_t * new_bloc=malloc(256*sizeof(uint8_t));
+// prérequis : bloc de taille 64
+//( 8*8 )->(16*16)
+uint8_t *dilatation_lc(uint8_t *bloc, uint8_t *out){
+   uint8_t *temp=malloc(256*sizeof(uint8_t));
+
+   temp=dilatation_ligne(bloc, temp);
 
    for (uint8_t i=0; i<16; i++){
       for(uint8_t j=0; j<16; j++){
-      new_bloc[j+16*i]=bloc[i/2*16+j];
+      out[j+16*i]=temp[i/2*16+j];
 
       }
    }
-   return new_bloc ;
+   free(temp);
+   return out ;
 }
 
 // 2 blocs de taille 64(8*8) -> un bloc de taille 128(8*16)
-uint8_t* juxtaposition_horizontale(uint8_t *bloc){
+uint8_t* juxtaposition_horizontale(uint8_t *bloc, uint8_t *out){
 
-   uint8_t *new_bloc=malloc(128*sizeof(uint8_t));
 
     for (uint8_t i=0; i<8; i++){
       for (uint8_t j=0 ; j<8 ; j++) {
-	 new_bloc[16*i+j]=bloc[i*8+j];
+	 out[16*i+j]=bloc[i*8+j];
 
-	 new_bloc[j+8 +i*16]=bloc[i*8+64+j];
+	 out[j+8 +i*16]=bloc[i*8+64+j];
       }
    }
-   return new_bloc ;
+   return out ;
 };
 
 
-
+uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
+   return 0;
+}
 
 
 void upsampler(uint8_t *in,
@@ -57,25 +63,26 @@ void upsampler(uint8_t *in,
 
 // Cas 4:2:2 :il faut etendre sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
-      out=dilatation_ligne(in);
+      out=dilatation_ligne(in, out);
    }
 
 // Cas 4:4:0 : il  faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (2*nb_blocks_in_v==nb_blocks_out_v)){
-      out=dilatation_ligne(in);
-      out=dilatation_colonne(out);
+
+      out=dilatation_lc(in, out);
 
    }
 
 // Si on veut transformer Y0-Y1 en un seul bloc
    else if ( (nb_blocks_in_h==2) & (nb_blocks_in_v==1)){
 
-      out=juxtaposition_horizontale(in);
+      out=juxtaposition_horizontale(in, out);
    }
 
 // Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc
 
-   // else if((nb_blocks_in_h==2) & (nb_blocks_in_v==2)) {
+   //else if((nb_blocks_in_h==2) & (nb_blocks_in_v==2)) {
+
 
 
 

@@ -66,10 +66,10 @@ uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
       out[i]=temp1[i];
       out[i+128]=temp2[i];
    }
-   free(temp1);
-   free(temp2);
-   free(temp1bis);
-   free(temp2bis);
+   //free(temp1);
+   //free(temp2);
+   //free(temp1bis);
+   //free(temp2bis);
    return out;
 }
 
@@ -80,35 +80,40 @@ void upsampler(uint8_t *in,
 	       uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)
 {
 
-
+   printf( " \n in h = %i  , in v =%i,  out h= %i, out v =% i \n", nb_blocks_in_h, nb_blocks_in_v, nb_blocks_out_h, nb_blocks_out_v);
 // Cas 4:4:4
-   if ( (nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v ==nb_blocks_out_v)) {
+   if ( (nb_blocks_out_h==1) & (nb_blocks_out_v ==1)) {
+      printf(" 4:4:4: \n");
       out=in ;
    }
 
-// Cas 4:2:2 :il faut etendre sur échantillonner le bloc
+// Cas 4:2:2 :il faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
       out=dilatation_ligne(in, out);
+      printf("4:2:2 \n");
    }
 
-// Cas 4:4:0 : il  faut sur échantillonner le bloc
+// Cas 4:2:0 : il  faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (2*nb_blocks_in_v==nb_blocks_out_v)){
 
       out=dilatation_lc(in, out);
-
+      printf("4:2:0 \n");
    }
 
 // Si on veut transformer Y0-Y1 en un seul bloc
-   else if ( (nb_blocks_in_h==2) & (nb_blocks_in_v==1)){
+   else if ( (nb_blocks_in_h==2*nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
 
       out=juxtaposition_horizontale(in, out);
+      printf("2 to 1 block \n");
    }
 
 // Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc
 
-   else if((nb_blocks_in_h==2) & (nb_blocks_in_v==2)) {
+   else if((nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)) {
 
-      juxtaposition_hv(in, out);
+      out=juxtaposition_hv(in, out);
+      printf("4 to 1 block \n");
+
    }
 
 
@@ -117,7 +122,7 @@ void upsampler(uint8_t *in,
 
 
    else {
-      printf("erreur : format d'échantillonnage non reconnu") ;
-      exit(1);
+      printf("erreur : format d'échantillonnage non reconnu \n") ;
+      //exit(1);
    }
 }

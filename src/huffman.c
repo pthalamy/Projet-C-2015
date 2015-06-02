@@ -154,7 +154,7 @@ bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
    /*    } */
    /* } */
 
-}
+
 
 
 
@@ -275,7 +275,7 @@ void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, s
       printf("arbre null");
       return ;
    }
-   else if ((arbre -> gauche ==NULL)&(arbre->droite ==NULL)){
+   else if (arbre->est_feuille){
       *symbole = arbre -> sym;
       printf("feuille atteinte");
       return ;
@@ -285,10 +285,12 @@ void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, s
       (void) suivant;
 
       if (direction==1){
-	 rec_parcours_abr(arbre->gauche,direction , symbole, stream);
+	 rec_parcours_abr(arbre->droite,direction , symbole, stream);
+	 printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole );
       }
       else if (direction==0){
-	 rec_parcours_abr(arbre->droite,direction, symbole, stream);
+	 rec_parcours_abr(arbre->gauche, direction, symbole, stream);
+	  printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole );
       }
       else {
 	 printf("erreur dans la lecture bit !=0ou1");

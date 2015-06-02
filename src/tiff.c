@@ -1,5 +1,7 @@
 #include "tiff.h"
 
+#include <stdlib.h>
+
 /* TYPES DE DONNEES */
 #define SHORT							 0x0003
 #define LONG	 						 0x0004
@@ -39,6 +41,8 @@
 #define BYTE_SIZE 8
 #define PIXELS_PER_CM 100
 
+#define MCU_BASE 8
+
 /* MACROS */
 #define NEXT_STRIP_OFFSET(base,  i, size) ((base) + (i) * (size))
 
@@ -46,10 +50,16 @@
  * l'écriture des données de l'image dans un fichier TIFF. */
 struct tiff_file_desc
 {
+   FILE *tiff;
    uint32_t width;
    uint32_t height;
    uint32_t row_per_strip;
-   FILE *tiff;
+   uint32_t nb_strips;
+   uint32_t x;
+   uint32_t y;
+   uint32_t mcus_h;
+   uint32_t mcus_v;
+   uint32_t **data; 		/* Tableau de nb strip tableaux de rows_per_strip*width pixels */
 };
 
 void fput16b(FILE *fp,  uint16_t v)
@@ -85,6 +95,7 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
 {
    /* Calcul du nombre de strip */
    uint32_t nb_strips = tfd->height / tfd->row_per_strip;
+   tfd->nb_strips = nb_strips;
    printf ("nb_strips = %d\n", nb_strips);
 
    /*calcul de la taille (en octets) des lignes*/
@@ -146,11 +157,11 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
    fput32b(tfd->tiff, 1);
 
    if (nb_strips > 2) {
-      printf ("%d strips: \n", nb_strips);
-      printf ("longueurs: ");
+      /* printf ("%d strips: \n", nb_strips); */
+      /* printf ("longueurs: "); */
       /* Longueur des strips */
       for (uint32_t i = 0; i < nb_strips ; i++) {
-	 printf ("%d ", strip_byte_count);
+	 /* printf ("%d ", strip_byte_count); */
 	 fput32b (tfd->tiff, strip_byte_count);
       }
       /* fput32b (tfd->tiff, last_strip_length);      /\* Derniere strip de longueur plus courte *\/ */
@@ -158,9 +169,9 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
 
       /* Offsets des strips */
       uint32_t first_strip = SBC_OFFSET + (nb_strips * 8);
-      printf ("\noffsets: ");
+      /* printf ("\noffsets: "); */
       for (uint32_t i = 0; i < nb_strips; i++) {
-	 printf ("0x%x ", NEXT_STRIP_OFFSET(first_strip, i, strip_byte_count));
+	 /* printf ("0x%x ", NEXT_STRIP_OFFSET(first_strip, i, strip_byte_count)); */
 	 fput32b (tfd->tiff, NEXT_STRIP_OFFSET(first_strip, i, strip_byte_count));
       }
    }
@@ -170,11 +181,11 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
    - width: la largeur de l'image ;
    - height: la hauteur de l'image ;
    - row_per_strip: le nombre de lignes de pixels par bande.
-   */
+*/
 struct tiff_file_desc *init_tiff_file (const char *file_name,
-      uint32_t width,
-      uint32_t height,
-      uint32_t row_per_strip)
+				       uint32_t width,
+				       uint32_t height,
+				       uint32_t row_per_strip)
 {
    struct tiff_file_desc *tfd = malloc (sizeof(struct tiff_file_desc));
    tfd->tiff = fopen(file_name,"w");
@@ -186,7 +197,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    tfd->height = height;
    printf ("tfd->height = %d\n",tfd->height);
    /*hauteur (en pixels) es lignes TIFF*/
-   tfd->row_per_strip=row_per_strip;
+   tfd->row_per_strip = row_per_strip;
    printf ("tfd->row_per_strip = %d\n",tfd->row_per_strip);
 
    /************************* Ecriture du header *************************/
@@ -196,14 +207,53 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
    tiff_write_ifd (tfd);
 
+   /************************ Initialisation stockage données ************************/
+
+   /* Calcul de la taille réelle de l'image encodée  */
+   uint32_t nb_mcus_h = (tfd->height / tfd->row_per_strip) + (tfd->height % tfd->row_per_strip ? 1 : 0);
+   uint32_t nb_mcus_v = (tfd->width / tfd->row_per_strip) + (tfd->width % tfd->row_per_strip ? 1 : 0);
+   printf ("nb_mcuh: %d | nb_mcuv : %d\n", nb_mcus_h, nb_mcus_v);
+   tfd->mcus_h = nb_mcus_h * tfd->row_per_strip;
+   tfd->mcus_v = nb_mcus_v * tfd->row_per_strip;
+   printf ("mcuh: %d | mcuv : %d\n", tfd->mcus_h, tfd->mcus_v);
+
+   tfd->data = malloc (tfd->mcus_h * sizeof(uint32_t*));
+   for (uint32_t i = 0; i < tfd->mcus_h; i++)
+      tfd->data[i] = malloc (tfd->width*sizeof(uint32_t));
+   tfd->x = 0;
+   tfd->y = 0;
+
    return tfd;
 }
+
+uint32_t nb_mcus_88 = 0;
+uint32_t nb_mcus_816 = 0;
+uint32_t nb_mcus_168 = 0;
+uint32_t nb_mcus_1616 = 0;
 
 /* Ferme le fichier associé à la structure tiff_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
 void close_tiff_file(struct tiff_file_desc *tfd)
 {
+   printf ("mcu: 8x8 = %d | 8x16 = %d | 16x8 = %d | 16x16 = %d\n",
+	   nb_mcus_88, nb_mcus_816, nb_mcus_168, nb_mcus_1616);
+   printf ("x : %d | y : %d\n", tfd->x, tfd->y);
+
+   /* Ecriture des données dans le fichier */
+   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
+      for (uint32_t j = 0; j < tfd->width; j++) {
+   	 fputc ((tfd->data[i][j] >> 16), tfd->tiff);
+   	 fputc ((tfd->data[i][j] >> 8), tfd->tiff);
+   	 fputc (tfd->data[i][j], tfd->tiff);
+      }
+   }
+
    fclose(tfd->tiff);
+
+   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
+      free (tfd->data[i]);
+   }
+   free (tfd->data);
    free(tfd);
    tfd=NULL;
 }
@@ -212,10 +262,37 @@ void close_tiff_file(struct tiff_file_desc *tfd)
  * représenté par la structure tiff_file_desc tfd. nb_blocks_h et
  * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
  * en horizontal et en vertical. */
-int32_t write_tiff_file (struct tiff_file_desc *tfd,
-      uint32_t *mcu_rgb,
-      uint8_t nb_blocks_h,
-      uint8_t nb_blocks_v)
+void write_tiff_file (struct tiff_file_desc *tfd,
+		      uint32_t *mcu_rgb,
+		      uint8_t nb_blocks_h,
+		      uint8_t nb_blocks_v)
 {
-   return 0;
+   /* printf ("H : %d | V : %d\n", nb_blocks_h, nb_blocks_v); */
+
+   /* Stockage de la mcu en parametre */
+   for (uint32_t i = 0; i < MCU_BASE * nb_blocks_h; i++) {
+      if (tfd->x >= tfd->width) {
+	 tfd->y += tfd->row_per_strip;
+	 tfd->x = 0;
+      }
+
+      for (uint32_t j = 0; j < MCU_BASE * nb_blocks_v; j++) {
+	 /* printf ("i : %d | x : %d | y : %d\n", i, tfd->x, tfd->y); */
+	 if ((tfd->x + j) >= tfd->width) {
+	    break;
+	 }
+	 tfd->data[tfd->y+i][tfd->x + j] = mcu_rgb[i * MCU_BASE *nb_blocks_v + j];
+      }
+   }
+
+   tfd->x += tfd->row_per_strip;
+
+   if (nb_blocks_h == 8 && nb_blocks_v == 8)
+      nb_mcus_88++;
+   else if (nb_blocks_h == 8 && nb_blocks_v == 16)
+      nb_mcus_816++;
+   else if (nb_blocks_h == 16 && nb_blocks_v == 8)
+      nb_mcus_168++;
+   else
+      nb_mcus_1616++;
 }

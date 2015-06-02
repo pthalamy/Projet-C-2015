@@ -16,25 +16,25 @@ LDFLAGS = -lm
 # Liste des objets encadrants
 
 OBJ_FILES = $(OBJ_DIR)/main.o
-# OBJ_FILES += $(OBJ_DIR)/iqzz.o
-# OBJ_FILES += $(OBJ_DIR)/idct.o
-# OBJ_FILES += $(OBJ_DIR)/conv.o
+OBJ_FILES += $(OBJ_DIR)/iqzz.o
+OBJ_FILES += $(OBJ_DIR)/idct.o
+OBJ_FILES += $(OBJ_DIR)/conv.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o
 OBJ_FILES += $(OBJ_DIR)/huffman.o
 OBJ_FILES += $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/bitstream.o
-OBJ_FILES += $(OBJ_DIR)/tiff.o
+# OBJ_FILES += $(OBJ_DIR)/tiff.o
 
 # Liste des objets realises
 # NEW_OBJ_FILES = $(NEW_OBJ_DIR)/main.o
-NEW_OBJ_FILES += $(NEW_OBJ_DIR)/iqzz.o
-NEW_OBJ_FILES += $(NEW_OBJ_DIR)/conv.o
-NEW_OBJ_FILES += $(NEW_OBJ_DIR)/idct.o
+# NEW_OBJ_FILES += $(NEW_OBJ_DIR)/iqzz.o
+# NEW_OBJ_FILES += $(NEW_OBJ_DIR)/conv.o
+# NEW_OBJ_FILES += $(NEW_OBJ_DIR)/idct.o
 # NEW_OBJ_FILES += $(NEW_OBJ_DIR)/upsampler.o
 # NEW_OBJ_FILES += $(NEW_OBJ_DIR)/huffman.o
 # NEW_OBJ_FILES += $(NEW_OBJ_DIR)/unpack.o
 # NEW_OBJ_FILES += $(NEW_OBJ_DIR)/bitstream.o
-# NEW_OBJ_FILES += $(NEW_OBJ_DIR)/tiff.o
+NEW_OBJ_FILES += $(NEW_OBJ_DIR)/tiff.o
 
 all : jpeg2tiff
 

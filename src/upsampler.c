@@ -73,7 +73,13 @@ uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
    return out;
 }
 
+uint8_t *inout(uint8_t *in, uint8_t*out){
+   for (uint8_t i=0; i<64; i++){
+      out[i]=in[i];
 
+   }
+   return out;
+}
 void upsampler(uint8_t *in,
 	       uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
 	       uint8_t *out,
@@ -84,7 +90,7 @@ void upsampler(uint8_t *in,
 // Cas 4:4:4
    if ( (nb_blocks_out_h==1) & (nb_blocks_out_v ==1)) {
       printf(" 4:4:4: \n");
-      out=in ;
+      out= inout(in, out) ;
    }
 
 // Cas 4:2:2 :il faut sur échantillonner le bloc
@@ -100,14 +106,14 @@ void upsampler(uint8_t *in,
       printf("4:2:0 \n");
    }
 
-// Si on veut transformer Y0-Y1 en un seul bloc
+// Si on veut transformer Y0-Y1 en un seul bloc (2 blocs 8*8 --> 1 bloc 16*8)
    else if ( (nb_blocks_in_h==2*nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
 
       out=juxtaposition_horizontale(in, out);
       printf("2 to 1 block \n");
    }
 
-// Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc
+// Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc (4 blocs 8*8 --> 1 bloc 16*16)
 
    else if((nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)) {
 

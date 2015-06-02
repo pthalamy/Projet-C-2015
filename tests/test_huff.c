@@ -62,80 +62,91 @@ void libere_huffman (struct abr *huff)
 
 
 
-
 // insertion à la profondeur prof, le plus a gauche possible
 // renvoie une booléen qui permet de savoir si l'insertion a réussi
-bool insertion_gauche( struct abr **abr, uint8_t prof, uint8_t symbole){
+// prérequis : profondeur inf ou égale à lg max !!!!
+bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
 
-   // insertion juste en dessous de la racine
+
    if (prof==1){
-      if ((*abr)==NULL){
-	 printf("abr null \n ");
-	 return false ;
-      }
-      if ((*abr)->gauche==NULL){
-	 (*abr)->gauche= malloc(sizeof(struct abr));
-	 (*abr) -> gauche ->sym = symbole ;
-	 (*abr)->gauche ->est_feuille=true;
-	 (*abr)->gauche->gauche=NULL;
-	 (*abr)->gauche->droite=NULL;
+      printf("prof=1 \n");
+      if(abr==NULL){
+	 abr=malloc(sizeof(struct abr));
+	 insertion_gauche(abr, prof, symbole);
+	 abr->est_feuille=false;
 	 return true;
       }
-      else if ((*abr)->droite ==NULL){
-	 (*abr) -> droite= malloc (sizeof (struct abr));
-	 (*abr)->droite ->sym= symbole ;
-	 (*abr)->droite->est_feuille=true;
-	 (*abr)->droite->gauche=NULL;
-	 (*abr)->droite->droite=NULL;
-	 return true;
+      else if (abr->gauche ==NULL){
+	 abr->gauche= malloc(sizeof(struct abr));
+	 printf("arbre alloué g \n");
+	 abr->gauche->sym=symbole;
+	 abr->gauche->est_feuille=true;
+	 return true ;
+      }
+      else if (abr->droite ==NULL){
+	 abr->droite=malloc(sizeof(struct abr));
+	 printf("arbre alloué d \n ");
+	 abr->droite->sym=symbole;
+	 abr->droite->est_feuille =true;
+	 return true ;
       }
       else {
-	 printf("niveau plein \n ");
-	 return false ;
+	 printf ("niveau plein");
+	 return(false);
       }
+      printf("sortie boucle1 \n");
    }
 
    else {
-      if (insertion_gauche(&((*abr)->gauche), prof-1, symbole)){
-	 printf("true g \n");
-	 return true; }
-
-      else if (insertion_gauche(&((*abr)->droite), prof-1, symbole)){
-	 printf("true d \n");
-	 return true;
+      printf ("prof diff1 \n");
+      if (abr==NULL){
+	 printf("alloc nv noeud non feuille \n");
+	 abr=malloc(sizeof(struct abr));
+	 insertion_gauche(abr, prof, symbole);
       }
       else {
-	 return false ;
+	 printf("acs arbre non null \n");
+	 if (insertion_gauche(abr->gauche, prof-1, symbole)){
+	    printf("appel gauche \n");
+	    return true; }
+
+	 else if (insertion_gauche(abr->droite, prof-1, symbole)){
+	    printf("appel droite \n");
+	    return true;
+	 }
+	 else {
+	    printf("pas de place pour descendre");
+	    return false ;
+	 }
       }
+
    }
 
 }
+   int main(void)
+   {
+      struct abr *ht = malloc (sizeof(struct abr));
+      ht->est_feuille = false;
+      //ht->gauche = malloc (sizeof(struct abr));
+      //ht->gauche->est_feuille = true;
+      //ht->gauche->gauche = ht->gauche->droite = NULL;
+      //ht->gauche->sym = 0xc1;
+      ht->droite = malloc (sizeof(struct abr));
+      ht->droite->est_feuille = false;
+      ht->droite->gauche = malloc (sizeof(struct abr));
+      ht->droite->gauche->est_feuille = true;
+      ht->droite->gauche->gauche = ht->droite->gauche->droite = NULL;
+      ht->droite->gauche->sym = 0xea;
+      ht->droite->droite = malloc (sizeof(struct abr));
+      ht->droite->droite->est_feuille = true;
+      ht->droite->droite->gauche = ht->droite->droite->droite = NULL;
+      ht->droite->droite->sym = 0x33;
 
+      affiche_huffman (ht);
+      printf("insertion \n");
+      insertion_gauche(ht, 2, 0x12);
+      affiche_huffman(ht);
+      libere_huffman (ht);
 
-int main(void)
-{
-   struct abr *ht = malloc (sizeof(struct abr));
-   ht->est_feuille = false;
-   ht->gauche = malloc (sizeof(struct abr));
-   ht->gauche->est_feuille = true;
-   ht->gauche->gauche = ht->gauche->droite = NULL;
-   ht->gauche->sym = 0xc1;
-   ht->droite = malloc (sizeof(struct abr));
-   ht->droite->est_feuille = false;
-   ht->droite->gauche = malloc (sizeof(struct abr));
-   ht->droite->gauche->est_feuille = true;
-   ht->droite->gauche->gauche = ht->droite->gauche->droite = NULL;
-   ht->droite->gauche->sym = 0xea;
-   ht->droite->droite = malloc (sizeof(struct abr));
-   ht->droite->droite->est_feuille = true;
-   ht->droite->droite->gauche = ht->droite->droite->droite = NULL;
-   ht->droite->droite->sym = 0x33;
-
-   affiche_huffman (ht);
-   printf("insertion \n");
-   insertion_gauche(&ht, 3, 0x12);
-   affiche_huffman(ht);
-   libere_huffman (ht);
-
-   return 0;
-}
+      return 0;
+   }

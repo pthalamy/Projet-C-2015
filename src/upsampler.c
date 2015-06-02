@@ -8,20 +8,19 @@
 
 // prérequis: bloc de taille 64
 //(8*8)->(16*8)
-uint8_t *dilatation_ligne(uint8_t *bloc, uint8_t *out){
+void dilatation_ligne(uint8_t *bloc, uint8_t *out){
 
    for(uint8_t i=0; i<128; i++){
       out[i]=bloc[i/2];
    }
-   return  out ;
 }
 
 // prérequis : bloc de taille 64
 //( 8*8 )->(16*16)
-uint8_t *dilatation_lc(uint8_t *bloc, uint8_t *out){
+void dilatation_lc(uint8_t *bloc, uint8_t *out){
    uint8_t *temp=malloc(256*sizeof(uint8_t));
 
-   temp=dilatation_ligne(bloc, temp);
+   dilatation_ligne(bloc, temp);
 
    for (uint8_t i=0; i<16; i++){
       for(uint8_t j=0; j<16; j++){
@@ -29,12 +28,12 @@ uint8_t *dilatation_lc(uint8_t *bloc, uint8_t *out){
 
       }
    }
+
    free(temp);
-   return out ;
 }
 
 // 2 blocs de taille 64(8*8) -> un bloc de taille 128(8*16)
-uint8_t* juxtaposition_horizontale(uint8_t *bloc, uint8_t *out){
+void juxtaposition_horizontale(uint8_t *bloc, uint8_t *out){
 
 
    for (uint8_t i=0; i<8; i++){
@@ -44,16 +43,15 @@ uint8_t* juxtaposition_horizontale(uint8_t *bloc, uint8_t *out){
 	 out[j+8 +i*16]=bloc[i*8+64+j];
       }
    }
-   return out ;
 };
 
 
 //4blocs de taille 64(8*8) --> un bloc de taille (16*16)
-uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
+void juxtaposition_hv(uint8_t *bloc, uint8_t *out){
 
    uint8_t *temp1=malloc(128*sizeof(uint8_t));
    uint8_t *temp1bis=malloc(128*sizeof(uint8_t));
-    uint8_t *temp2=malloc(128*sizeof(uint8_t));
+   uint8_t *temp2=malloc(128*sizeof(uint8_t));
    uint8_t *temp2bis=malloc(128*sizeof(uint8_t));
 
    for(uint8_t i=0; i<128; i++){
@@ -63,27 +61,26 @@ uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
       temp2bis[i]=bloc[i+128];
    }
 
-   temp1=juxtaposition_horizontale(temp1, temp1bis);
-   temp2=juxtaposition_horizontale(temp2, temp2bis);
+   juxtaposition_horizontale(temp1, temp1bis);
+   juxtaposition_horizontale(temp2, temp2bis);
 
    for (uint8_t i=0; i<128; i++){
-      out[i]=temp1[i];
-      out[i+128]=temp2[i];
+      out[i]=temp1bis[i];
+      out[i+128]=temp2bis[i];
    }
-   //free(temp1);
-   //free(temp2);
-   //free(temp1bis);
-   //free(temp2bis);
-   return out;
+   free(temp1);
+   free(temp2);
+   free(temp1bis);
+   free(temp2bis);
 }
 
-uint8_t *inout(uint8_t *in, uint8_t*out){
+void inout(uint8_t *in, uint8_t*out){
    for (uint8_t i=0; i<64; i++){
       out[i]=in[i];
 
    }
-   return out;
 }
+
 void upsampler(uint8_t *in,
 	       uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
 	       uint8_t *out,
@@ -94,26 +91,26 @@ void upsampler(uint8_t *in,
 // Cas 4:4:4
    if ( (nb_blocks_out_h==1) & (nb_blocks_out_v ==1)) {
 
-      out= inout(in, out) ;
+       inout(in, out) ;
    }
 
 // Cas 4:2:2 :il faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
-      out=dilatation_ligne(in, out);
+      dilatation_ligne(in, out);
 
    }
 
 // Cas 4:2:0 : il  faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (2*nb_blocks_in_v==nb_blocks_out_v)){
 
-      out=dilatation_lc(in, out);
+      dilatation_lc(in, out);
 
    }
 
 // Si on veut transformer Y0-Y1 en un seul bloc (2 blocs 8*8 --> 1 bloc 16*8)
    else if ( (nb_blocks_in_h==2*nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
 
-      out=juxtaposition_horizontale(in, out);
+      juxtaposition_horizontale(in, out);
 
    }
 
@@ -121,7 +118,7 @@ void upsampler(uint8_t *in,
 
    else if((nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)) {
 
-      out=juxtaposition_hv(in, out);
+      juxtaposition_hv(in, out);
     }
 
 

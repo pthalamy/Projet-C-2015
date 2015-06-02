@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//ATTENTION : a tester si possible les MCU 8*16. Attention au valgrind, problème.
+
+
+
 // prérequis: bloc de taille 64
 //(8*8)->(16*8)
 uint8_t *dilatation_ligne(uint8_t *bloc, uint8_t *out){
@@ -86,31 +90,31 @@ void upsampler(uint8_t *in,
 	       uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)
 {
 
-   printf( " \n in h = %i  , in v =%i,  out h= %i, out v =% i \n", nb_blocks_in_h, nb_blocks_in_v, nb_blocks_out_h, nb_blocks_out_v);
+
 // Cas 4:4:4
    if ( (nb_blocks_out_h==1) & (nb_blocks_out_v ==1)) {
-      printf(" 4:4:4: \n");
+
       out= inout(in, out) ;
    }
 
 // Cas 4:2:2 :il faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
       out=dilatation_ligne(in, out);
-      printf("4:2:2 \n");
+
    }
 
 // Cas 4:2:0 : il  faut sur échantillonner le bloc
    else if ((2*nb_blocks_in_h==nb_blocks_out_h) & (2*nb_blocks_in_v==nb_blocks_out_v)){
 
       out=dilatation_lc(in, out);
-      printf("4:2:0 \n");
+
    }
 
 // Si on veut transformer Y0-Y1 en un seul bloc (2 blocs 8*8 --> 1 bloc 16*8)
    else if ( (nb_blocks_in_h==2*nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)){
 
       out=juxtaposition_horizontale(in, out);
-      printf("2 to 1 block \n");
+
    }
 
 // Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc (4 blocs 8*8 --> 1 bloc 16*16)
@@ -118,9 +122,7 @@ void upsampler(uint8_t *in,
    else if((nb_blocks_in_h==nb_blocks_out_h) & (nb_blocks_in_v==nb_blocks_out_v)) {
 
       out=juxtaposition_hv(in, out);
-      printf("4 to 1 block \n");
-
-   }
+    }
 
 
 

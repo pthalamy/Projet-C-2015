@@ -96,11 +96,11 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
    /* Calcul du nombre de strip */
    uint32_t nb_strips = tfd->height / tfd->row_per_strip;
    tfd->nb_strips = nb_strips;
-   printf ("nb_strips = %d\n", nb_strips);
+   /* printf ("nb_strips = %d\n", nb_strips); */
 
    /*calcul de la taille (en octets) des lignes*/
    uint32_t strip_byte_count = BYTES_PER_PIXEL * tfd->row_per_strip * tfd->width;
-   printf ("strip_byte_count = %d\n", strip_byte_count);
+   /* printf ("strip_byte_count = %d\n", strip_byte_count); */
 
    /* /\* Longueur de la dernière strip *\/ */
    /* uint32_t last_strip_length = (tfd->width * tfd->height * BYTES_PER_PIXEL) */
@@ -192,13 +192,13 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
    /*nombre de colonnes de l'image*/
    tfd->width = width;
-   printf ("tfd->width = %d\n",tfd->width);
+   /* printf ("tfd->width = %d\n",tfd->width); */
    /*nombre de lignes de l'image*/
    tfd->height = height;
-   printf ("tfd->height = %d\n",tfd->height);
+   /* printf ("tfd->height = %d\n",tfd->height); */
    /*hauteur (en pixels) es lignes TIFF*/
    tfd->row_per_strip = row_per_strip;
-   printf ("tfd->row_per_strip = %d\n",tfd->row_per_strip);
+   /* printf ("tfd->row_per_strip = %d\n",tfd->row_per_strip); */
 
    /************************* Ecriture du header *************************/
    tiff_write_header (tfd);
@@ -212,10 +212,10 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    /* Calcul de la taille réelle de l'image encodée  */
    uint32_t nb_mcus_h = (tfd->height / tfd->row_per_strip) + (tfd->height % tfd->row_per_strip ? 1 : 0);
    uint32_t nb_mcus_v = (tfd->width / tfd->row_per_strip) + (tfd->width % tfd->row_per_strip ? 1 : 0);
-   printf ("nb_mcuh: %d | nb_mcuv : %d\n", nb_mcus_h, nb_mcus_v);
+   /* printf ("nb_mcuh: %d | nb_mcuv : %d\n", nb_mcus_h, nb_mcus_v); */
    tfd->mcus_h = nb_mcus_h * tfd->row_per_strip;
    tfd->mcus_v = nb_mcus_v * tfd->row_per_strip;
-   printf ("mcuh: %d | mcuv : %d\n", tfd->mcus_h, tfd->mcus_v);
+   /* printf ("mcuh: %d | mcuv : %d\n", tfd->mcus_h, tfd->mcus_v); */
 
    tfd->data = malloc (tfd->mcus_h * sizeof(uint32_t*));
    for (uint32_t i = 0; i < tfd->mcus_h; i++)
@@ -226,18 +226,11 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    return tfd;
 }
 
-uint32_t nb_mcus_88 = 0;
-uint32_t nb_mcus_816 = 0;
-uint32_t nb_mcus_168 = 0;
-uint32_t nb_mcus_1616 = 0;
-
 /* Ferme le fichier associé à la structure tiff_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
 void close_tiff_file(struct tiff_file_desc *tfd)
 {
-   printf ("mcu: 8x8 = %d | 8x16 = %d | 16x8 = %d | 16x16 = %d\n",
-	   nb_mcus_88, nb_mcus_816, nb_mcus_168, nb_mcus_1616);
-   printf ("x : %d | y : %d\n", tfd->x, tfd->y);
+   /* printf ("x : %d | y : %d\n", tfd->x, tfd->y); */
 
    /* Ecriture des données dans le fichier */
    for (uint32_t i = 0; i < tfd->mcus_h; i++) {
@@ -267,32 +260,31 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 		      uint8_t nb_blocks_h,
 		      uint8_t nb_blocks_v)
 {
-   /* printf ("H : %d | V : %d\n", nb_blocks_h, nb_blocks_v); */
+   /* printf ("V : %d | H : %d\n", nb_blocks_v, nb_blocks_h); */
+   /* Stockage de la MCU d'entrée */
+   /* Par composante 8*8 */
+   for (uint32_t k = 0; k < nb_blocks_v; k++) {
+      for (uint32_t l = 0; l < nb_blocks_h; l++) {
 
-   /* Stockage de la mcu en parametre */
-   for (uint32_t i = 0; i < MCU_BASE * nb_blocks_h; i++) {
-      if (tfd->x >= tfd->width) {
-	 tfd->y += tfd->row_per_strip;
-	 tfd->x = 0;
-      }
-
-      for (uint32_t j = 0; j < MCU_BASE * nb_blocks_v; j++) {
-	 /* printf ("i : %d | x : %d | y : %d\n", i, tfd->x, tfd->y); */
-	 if ((tfd->x + j) >= tfd->width) {
-	    break;
+ 	 for (uint32_t i = k*MCU_BASE; i < (MCU_BASE + k*MCU_BASE); i++) {
+	    if (tfd->x >= tfd->width) {
+	       tfd->y += nb_blocks_v * MCU_BASE;
+	       tfd->x = 0;
+	    }
+	    for (uint32_t j = l*MCU_BASE; j < (MCU_BASE + l*MCU_BASE); j++) {
+	       /* printf ("x : %d | y : %d | rgb : %d | wy: %d | wx: %d\n", tfd->x, tfd->y, */
+		       /* i * MCU_BASE * nb_blocks_h + j, tfd->y+i, tfd->x+j); */
+	       if ((tfd->x + j) >= tfd->width) {
+		  /* printf ("break\n\n"); */
+		  break;
+	       }
+	       tfd->data[tfd->y + i][tfd->x + j] = mcu_rgb[i * MCU_BASE * nb_blocks_h + j];
+	    }
+	    /* printf ("\n"); */
 	 }
-	 tfd->data[tfd->y+i][tfd->x + j] = mcu_rgb[i * MCU_BASE *nb_blocks_v + j];
+
       }
    }
 
-   tfd->x += tfd->row_per_strip;
-
-   if (nb_blocks_h == 8 && nb_blocks_v == 8)
-      nb_mcus_88++;
-   else if (nb_blocks_h == 8 && nb_blocks_v == 16)
-      nb_mcus_816++;
-   else if (nb_blocks_h == 16 && nb_blocks_v == 8)
-      nb_mcus_168++;
-   else
-      nb_mcus_1616++;
+   tfd->x += MCU_BASE * nb_blocks_h;
 }

@@ -56,6 +56,55 @@ void affiche_tab (uint8_t *tab, uint8_t h, uint8_t v){
 
 }
 
+
+
+//4blocs de taille 16(4*4) --> un bloc de taille (8*8)
+uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
+
+   uint8_t *temp1=malloc(32*sizeof(uint8_t));
+   uint8_t *temp1bis=malloc(32*sizeof(uint8_t));
+   uint8_t *temp2=malloc(32*sizeof(uint8_t));
+   uint8_t *temp2bis=malloc(32*sizeof(uint8_t));
+
+
+   for(uint8_t i=0; i<32; i++){
+      temp1[i]=bloc[i];
+      temp1bis[i]=bloc[i];
+      temp2[i]=bloc[i+32];
+      temp2bis[i]=bloc[i+32];
+   }
+
+
+   printf("temp1 \n");
+   affiche_tab(temp1, 4, 8);
+
+   printf(" \n temp2 \n ");
+   affiche_tab(temp2, 4, 8);
+
+   temp1=juxtaposition_horizontale(temp1, temp1bis);
+   temp2=juxtaposition_horizontale(temp2, temp2bis);
+
+    printf("temp1 juxtap \n");
+   affiche_tab(temp1, 8, 4);
+
+   printf(" \n temp2 juxtap \n ");
+   affiche_tab(temp2, 8, 4);
+
+
+
+   printf("fin temp \n");
+   for (uint8_t i=0; i<32; i++){
+      out[i]=temp1[i];
+      out[i+32]=temp2[i];
+   }
+   free(temp1);
+   free(temp2);
+   return out;
+}
+
+
+
+
 int  main(void){
 
 //  initialisation tableau
@@ -88,6 +137,22 @@ int  main(void){
    uint8_t *out3=malloc(32*sizeof(uint8_t));
    printf("juxtaposition horizontale \n") ;
    affiche_tab(juxtaposition_horizontale(tab2, out3), 8,4);
+
+   printf("\n \n");
+   printf("tab3 \n ");
+
+   uint8_t tab3[64];
+   for(uint8_t i=0; i<16; i++){
+      tab3[i]=i;
+      tab3[i+16]=i;
+      tab3[i+32]=i+100;
+      tab3[i+48]=i+100;
+   }
+   affiche_tab(tab3, 4,16);
+
+   printf("\n juxta hv \n");
+   uint8_t *out4=malloc(64*sizeof(uint8_t));
+   affiche_tab(juxtaposition_hv(tab3, out4) , 8 , 8);
 
    free(out); free(out2); free(out3);
    return 0;

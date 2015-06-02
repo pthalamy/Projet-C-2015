@@ -99,6 +99,8 @@ uint8_t *juxtaposition_hv(uint8_t *bloc, uint8_t *out){
    }
    free(temp1);
    free(temp2);
+   free(temp1bis);
+   free(temp2bis);
    return out;
 }
 
@@ -154,6 +156,7 @@ int  main(void){
    uint8_t *out4=malloc(64*sizeof(uint8_t));
    affiche_tab(juxtaposition_hv(tab3, out4) , 8 , 8);
 
-   free(out); free(out2); free(out3);
+   free(out); free(out2); free(out3);free(out4);
+
    return 0;
 }

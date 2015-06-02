@@ -58,41 +58,101 @@ void affiche_huffman (struct abr *huff)
 // insertion à la profondeur prof, le plus a gauche possible
 // renvoie une booléen qui permet de savoir si l'insertion a réussi
 // prérequis : profondeur inf ou égale à lg max !!!!
+// insertion à la profondeur prof, le plus a gauche possible
+// renvoie une booléen qui permet de savoir si l'insertion a réussi
+// prérequis : profondeur inf ou égale à lg max !!!!
 bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
 
-   // insertion juste en dessous de la racine
+
    if (prof==1){
-      if (abr==NULL){
-	 printf("abr null \n ");
-	 return false ;
-      }
-      if (abr->gauche==NULL){
-	 abr->gauche= malloc(sizeof(struct abr));
-	 abr -> gauche ->sym = symbole ;
+      printf("prof=1 \n");
+      if(abr==NULL){
+	 abr=malloc(sizeof(struct abr));
+	 insertion_gauche(abr, prof, symbole);
 	 return true;
+      }
+      else if (abr->gauche ==NULL){
+	 abr->gauche= malloc(sizeof(struct abr));
+	 printf("arbre alloué g \n");
+	 abr->gauche->sym=symbole;
+	 abr->gauche->est_feuille=true;
+	 return true ;
       }
       else if (abr->droite ==NULL){
-	 abr -> droite= malloc (sizeof (struct abr));
-	 abr->droite ->sym= symbole ;
-	 return true;
+	 abr->droite=malloc(sizeof(struct abr));
+	 printf("arbre alloué d \n ");
+	 abr->droite->sym=symbole;
+	 abr->droite->est_feuille =true;
+	 return true ;
       }
       else {
-	 printf("niveau plein \n ");
-	 return false ;
+	 printf ("niveau plein");
+	 return(false);
       }
+      printf("sortie boucle1 \n");
    }
 
    else {
-      if (insertion_gauche(abr->gauche, prof-1, symbole)){
-	 return true; }
-
-      else if (insertion_gauche(abr->droite, prof-1, symbole)){
-	 return true;
+      printf ("prof diff1 \n");
+      if (abr==NULL){
+	 printf("alloc nv noeud non feuille \n");
+	 abr=malloc(sizeof(struct abr));
+	 insertion_gauche(abr, prof, symbole);
       }
       else {
-	 return false ;
+	 printf("acs arbre non null \n");
+	 if (insertion_gauche(abr->gauche, prof-1, symbole)){
+	    printf("appel gauche \n");
+	    return true; }
+
+	 else if (insertion_gauche(abr->droite, prof-1, symbole)){
+	    printf("appel droite \n");
+	    return true;
+	 }
+	 else {
+	    printf("pas de place pour descendre");
+	    return false ;
+	 }
       }
+
    }
+
+}
+
+
+   // insertion juste en dessous de la racine
+   /* if (prof==1){ */
+   /*    if (abr==NULL){ */
+   /* 	 printf("abr null \n "); */
+   /* 	 return false ; */
+   /*    } */
+   /*    if (abr->gauche==NULL){ */
+   /* 	 abr->gauche= malloc(sizeof(struct abr)); */
+   /* 	 abr -> gauche ->sym = symbole ; */
+   /* 	 return true; */
+   /*    } */
+   /*    else if (abr->droite ==NULL){ */
+   /* 	 abr -> droite= malloc (sizeof (struct abr)); */
+   /* 	 abr->droite ->sym= symbole ; */
+   /* 	 return true; */
+   /*    } */
+   /*    else { */
+   /* 	 printf("niveau plein \n "); */
+   /* 	 return false ; */
+   /*    } */
+   /* } */
+
+   /* else { */
+   /*    if (insertion_gauche(abr->gauche, prof-1, symbole)){ */
+   /* 	 return true; } */
+
+   /*    else if (insertion_gauche(abr->droite, prof-1, symbole)){ */
+   /* 	 return true; */
+   /*    } */
+   /*    else { */
+   /* 	 return false ; */
+   /*    } */
+   /* } */
 
 }
 

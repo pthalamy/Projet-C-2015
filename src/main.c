@@ -77,142 +77,151 @@ int main(int argc, char *argv[]){
    // saut marqueur SOI
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
-      fprintf(stderr, "Le fichier en commence par un SOI mais 0x%x !\n", buf);
+      fprintf(stderr, "Le fichier ne commence pas par un SOI mais 0x%x !\n", buf);
       exit (1);
    }
 
-   // Lecture du premier marqueur de section
-   read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
-   read_nbytes(stream, 1, &buf, false);
+   while (true) {
 
-   struct table_quantif *quantif;
+      // Lecture du premier marqueur de section
+      read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
+      read_nbytes(stream, 1, &buf, false);
 
-   switch(buf){
+      struct table_quantif *quantif;
 
-      //APP0 : encapsulation JFIF
-   case 0xe0 :
-      printf ("APP0: \n");
-      read_nbytes(stream, 2, &longueur_section, false);
-      longueur_section = longueur_section;
-      printf (" longeur section: %d\n", longueur_section);
+      switch(buf){
 
-      /* Lecture  de JFIF */
-      char jfif[5];
-      read_nbytes(stream, 1, (uint32_t*)&jfif[0], false);
-      read_nbytes(stream, 1, (uint32_t*)&jfif[1], false);
-      read_nbytes(stream, 1, (uint32_t*)&jfif[2], false);
-      read_nbytes(stream, 1, (uint32_t*)&jfif[3], false);
-      read_nbytes(stream, 1, (uint32_t*)&jfif[4], false);
-      if (strcmp (jfif, "JFIF")) {
-	 fprintf (stderr, "erreur APP0 : JFIF absent <= %s\n", jfif);
-	 exit (1);
-      }
+	 //APP0 : encapsulation JFIF
+      case 0xe0 :
+	 printf ("APP0: \n");
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 longueur_section = longueur_section;
+	 printf (" longeur section: %d\n", longueur_section);
 
-      // PASSER A LA FIN DE LA SECTION (SKIP ou READBYTES ?)
-      /* Lecture des données additionnelles */
-      uint32_t version;
-      read_nbytes(stream, 2, &version, false);
-      printf (" version JFIF: %d\n", version);
-
-      uint32_t densityUnits;
-      read_nbytes(stream, 1, &densityUnits, false);
-      printf ("  density unit: %d\n", densityUnits);
-
-      uint32_t xDensity;
-      read_nbytes(stream, 2, &xDensity, false);
-      printf ("  x density: %d\n", xDensity);
-
-      uint32_t yDensity;
-      read_nbytes(stream, 2, &yDensity, false);
-      printf ("  y density: %d\n", yDensity);
-
-      uint32_t tw;
-      read_nbytes(stream, 1, &tw, false);
-      printf ("  thumbnail width: %d\n", tw);
-
-      uint32_t th;
-      read_nbytes(stream, 1, &th, false);
-      printf ("  thumbnail height: %d\n", th);
-
-      uint32_t t_data;
-      for (uint8_t i = 0; i < tw*th ; i++){
-	 read_nbytes(stream, 3, &t_data, false);
-      }
-      break ;
-
-   case 0xFE :			/* COM */
-      read_nbytes(stream, 2, &longueur_section, false);
-      for (uint8_t i =0; i<longueur_section-2 ; i++){
-	 read_nbytes(stream, 1, &buf, false);
-	 printf("%c", buf) ;
-      }
-      // passer en section suivante : skip ?
-      break ;
-
-   case 0xdb:			/* DQT */
-      if ( !unicite){
-	 printf("erreur: plusieurs définitions des tables \n");
-      }
-      uint32_t precision;
-      uint32_t iq ;
-      uint32_t nb_tables ;
-      //calcul du nombre de tables de la section
-      read_nbytes(stream, 2, &longueur_section, false);
-      nb_tables=(longueur_section-2)/65;
-      if (nb_tables != 1){
-	 unicite=false ;
-      }
-
-      // extraction de la précision et l'iq de la 1e table
-       read_nbits(stream, 4, &precision, false);
-       read_nbits(stream, 4, & iq, false);
-
-      // ok dans le cas ou une section et plusieurs tables
-      // cas une table par section (plusieurs sections a faire)
-      quantif = malloc (nb_tables * sizeof(struct table_quantif));
-      quantif[0].ind=iq ;
-      quantif[0].prec=precision ;
-
-      for (uint8_t i =0 ; i<nb_tables; i++){
-
-	 if (i!=0){
-	 read_nbits(stream, 4, &precision, false);
-	 read_nbits(stream, 4, & iq, false);
-	 quantif[i].prec=precision;
-	 quantif[i].ind=iq ;
-	  }
-
-	 for (uint8_t j =0; j<64; j++){
-	    read_nbytes(stream, 1, &buf, false);
-	    quantif[i].val[j]=buf;
+	 /* Lecture  de JFIF */
+	 char jfif[5];
+	 read_nbytes(stream, 1, (uint32_t*)&jfif[0], false);
+	 read_nbytes(stream, 1, (uint32_t*)&jfif[1], false);
+	 read_nbytes(stream, 1, (uint32_t*)&jfif[2], false);
+	 read_nbytes(stream, 1, (uint32_t*)&jfif[3], false);
+	 read_nbytes(stream, 1, (uint32_t*)&jfif[4], false);
+	 if (strcmp (jfif, "JFIF")) {
+	    fprintf (stderr, "erreur APP0 : JFIF absent <= %s\n", jfif);
+	    exit (1);
 	 }
 
+	 // PASSER A LA FIN DE LA SECTION (SKIP ou READBYTES ?)
+	 /* Lecture des données additionnelles */
+	 uint32_t version;
+	 read_nbytes(stream, 2, &version, false);
+	 printf (" version JFIF: %d\n", version);
 
+	 uint32_t densityUnits;
+	 read_nbytes(stream, 1, &densityUnits, false);
+	 printf ("  density unit: %d\n", densityUnits);
+
+	 uint32_t xDensity;
+	 read_nbytes(stream, 2, &xDensity, false);
+	 printf ("  x density: %d\n", xDensity);
+
+	 uint32_t yDensity;
+	 read_nbytes(stream, 2, &yDensity, false);
+	 printf ("  y density: %d\n", yDensity);
+
+	 uint32_t tw;
+	 read_nbytes(stream, 1, &tw, false);
+	 printf ("  thumbnail width: %d\n", tw);
+
+	 uint32_t th;
+	 read_nbytes(stream, 1, &th, false);
+	 printf ("  thumbnail height: %d\n", th);
+
+	 uint32_t t_data;
+	 for (uint8_t i = 0; i < tw*th ; i++){
+	    read_nbytes(stream, 3, &t_data, false);
+	 }
+	 break ;
+
+      case 0xFE :			/* COM */
+	 printf ("COM: \n");
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 for (uint8_t i =0; i<longueur_section-2 ; i++){
+	    read_nbytes(stream, 1, &buf, false);
+	    printf("%c", buf) ;
+	 }
+	 // passer en section suivante : skip ?
+	 break ;
+
+      case 0xdb:			/* DQT */
+	 printf ("DQT: \n");
+	 if ( !unicite){
+	    printf("erreur: plusieurs définitions des tables \n");
+	 }
+	 uint32_t precision;
+	 uint32_t iq ;
+	 uint32_t nb_tables ;
+	 //calcul du nombre de tables de la section
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 nb_tables=(longueur_section-2)/65;
+	 if (nb_tables != 1){
+	    unicite=false ;
+	 }
+
+	 // extraction de la précision et l'iq de la 1e table
+	 read_nbits(stream, 4, &precision, false);
+	 read_nbits(stream, 4, & iq, false);
+
+	 // ok dans le cas ou une section et plusieurs tables
+	 // cas une table par section (plusieurs sections a faire)
+	 quantif = malloc (nb_tables * sizeof(struct table_quantif));
+	 quantif[0].ind=iq ;
+	 quantif[0].prec=precision ;
+
+	 for (uint8_t i =0 ; i<nb_tables; i++){
+
+	    if (i!=0){
+	       read_nbits(stream, 4, &precision, false);
+	       read_nbits(stream, 4, & iq, false);
+	       quantif[i].prec=precision;
+	       quantif[i].ind=iq ;
+	    }
+
+	    for (uint8_t j =0; j<64; j++){
+	       read_nbytes(stream, 1, &buf, false);
+	       quantif[i].val[j]=buf;
+	    }
+
+
+	 }
+
+	 // passer en section suivante : skip ?
+	 break ;
+      case 0xc0:			/* SOF0 */
+	 printf ("SOF0: \n");
+	 exit (1);
+	 break;
+      case 0xc4:			/* DHT */
+	 printf ("DHT: \n");
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 longueur_section=longueur_section-2;
+
+	 read_nbytes(stream, 1, &longueur_section, false);
+	 longueur_section=longueur_section-2;
+	 exit (1);
+	 break ;
+      case 0xda:			/* SOS */
+	 printf ("SOS: \n");
+	 exit (1);
+	 break ;
+      case 0xd9:		/* EOI */
+	 printf ("EOI: \n");
+	 return 0;
+	 break;
+      default :
+	 printf("erreur, marqueur de section non reconnu \n");
+	 exit (1);
       }
-
-      // passer en section suivante : skip ?
-      break ;
-
-
-   case 0xc0:			/* SOF0 */
-
-      break;
-
-   case 0xc4:			/* DHT */
-      read_nbytes(stream, 2, &longueur_section, false);
-      longueur_section=longueur_section-2;
-
-      read_nbytes(stream, 1, &longueur_section, false);
-      longueur_section=longueur_section-2;
-
-      break ;
-   case 0xda:			/* SOS */
-      break ;
-   default :
-      printf("erreur, marqueur de section non reconnu \n");
-
    }
-
    /* /\*extraction, decompression, multiplication par les facteurs et */
    /*  * réorganisation zizgag des données des blocs */
    /*  * + transform&e en cosinus discrete inverse*\/ */

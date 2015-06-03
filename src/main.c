@@ -69,7 +69,10 @@ int main(int argc, char *argv[]){
    uint32_t buf;
    uint32_t longueur_section ;
    bool unicite = true ; // vérifie que la déclaration des DQT est correcte
-
+   uint8_t compteur_huff_AC = 0 ; // comptent le nb de tables définies
+   uint8_t compteur_huff_DC = 0;
+   struct huff_table *huff_AC[4];
+   struct huff_table *huff_DC[4];
 
    // saut marqueur SOI
    read_nbytes(stream, 2, &buf, false);
@@ -139,11 +142,11 @@ int main(int argc, char *argv[]){
 
    case 0xFE :			/* COM */
       read_nbytes(stream, 2, &longueur_section, false);
-      for (uint8_t i =0; i<longueur_section ; i++){
+      for (uint8_t i =0; i<longueur_section-2 ; i++){
 	 read_nbytes(stream, 1, &buf, false);
 	 printf("%c", buf) ;
       }
-
+      // passer en section suivante : skip ?
       break ;
 
    case 0xdb:			/* DQT */
@@ -187,11 +190,19 @@ int main(int argc, char *argv[]){
 
       }
 
+      // passer en section suivante : skip ?
       break ;
 
    case 0xc0:			/* SOF0 */
       break;
+
    case 0xc4:			/* DHT */
+      read_nbytes(stream, 2, &longueur_section, false);
+      longueur_section=longueur_section-2;
+
+      read_nbytes(stream, 1, &longueur_section, false);
+      longueur_section=longueur_section-2;
+
       break ;
    case 0xda:			/* SOS */
       break ;

@@ -17,6 +17,12 @@ struct table_quantif {
    uint8_t prec;
 };
 
+struct unit{
+   uint8_t ic;
+   uint8_t iq;
+   uint8_t sampling_factor_h ;
+   uint8_t sampling_factor_v ;
+};
 
 
 void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
@@ -74,6 +80,14 @@ int main(int argc, char *argv[]){
    struct huff_table *huff_AC[4];
    struct huff_table *huff_DC[4];
 
+   uint32_t height;
+   uint32_t width ;
+   uint32_t N;
+   uint32_t ic;
+   uint32_t iq;
+   uint32_t sampling_factor_h;
+   uint32_t sampling_factor_v;
+
    // saut marqueur SOI
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
@@ -88,7 +102,7 @@ int main(int argc, char *argv[]){
       read_nbytes(stream, 1, &buf, false);
 
       struct table_quantif *quantif;
-
+      struct unit *composantes ;
       switch(buf){
 
 	 //APP0 : encapsulation JFIF
@@ -198,7 +212,27 @@ int main(int argc, char *argv[]){
 	 break ;
       case 0xc0:			/* SOF0 */
 	 printf ("SOF0: \n");
-	 exit (1);
+
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 read_nbytes(stream, 1, &precision, false);
+	 read_nbytes(stream, 2, &height, false);
+	 read_nbytes(stream, 2, &width, false);
+	 read_nbytes(stream, 1, &N, false);
+
+	 composantes=malloc(N*sizeof(struct unit));
+
+	 for(uint8_t i=0; i<N; i++){
+	    read_nbytes(stream, 1, &ic, false);
+	    read_nbits(stream, 4, &sampling_factor_h , false);
+	    read_nbits(stream, 4, &sampling_factor_v, false);
+	    read_nbytes(stream, 1, &iq, false);
+
+	    composantes[i].ic=ic;
+	    composantes[i].iq=iq;
+	    composantes[i].sampling_factor_h= sampling_factor_h;
+	    composantes[i].sampling_factor_v=sampling_factor_v;
+	 }
+
 	 break;
       case 0xc4:			/* DHT */
 	 printf ("DHT: \n");

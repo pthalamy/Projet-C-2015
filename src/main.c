@@ -31,7 +31,7 @@ void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool 
    if (nbLus != nb_bits)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
 
-   printf ("0x%x\n", *dest);
+   printf ("%#.2x ", *dest);
 }
 
 void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
@@ -39,7 +39,7 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
    uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
    if (nbLus != 8*nb_bytes)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
-   printf ("0x%x\n", *dest);
+   printf ("%#.2x ", *dest);
 }
 
 
@@ -100,6 +100,7 @@ int main(int argc, char *argv[]){
       // Lecture du premier marqueur de section
       read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
       read_nbytes(stream, 1, &buf, false);
+      printf ("\n");
 
       struct table_quantif *quantif;
       struct unit *composantes ;
@@ -170,42 +171,43 @@ int main(int argc, char *argv[]){
 	 printf ("DQT: \n");
 	 if ( !unicite){
 	    printf("erreur: plusieurs définitions des tables \n");
+	    exit (1);
 	 }
 	 uint32_t precision;
 	 uint32_t iq ;
 	 uint32_t nb_tables ;
+
 	 //calcul du nombre de tables de la section
 	 read_nbytes(stream, 2, &longueur_section, false);
-	 nb_tables=(longueur_section-2)/65;
-	 if (nb_tables != 1){
-	    unicite=false ;
-	 }
+	 printf (" longeur section: %d\n", longueur_section);
+	 nb_tables = (longueur_section-2) / 65;
+	 printf (" nombre de tables: %d\n", nb_tables);
 
-	 // extraction de la précision et l'iq de la 1e table
-	 read_nbits(stream, 4, &precision, false);
-	 read_nbits(stream, 4, & iq, false);
+	 if (nb_tables != 1) {
+	    unicite = false ;
+	 }
 
 	 // ok dans le cas ou une section et plusieurs tables
 	 // cas une table par section (plusieurs sections a faire)
 	 quantif = malloc (nb_tables * sizeof(struct table_quantif));
-	 quantif[0].ind=iq ;
-	 quantif[0].prec=precision ;
+	 for (uint8_t i  = 0 ; i < nb_tables; i++) {
+	    printf (" Table %d\n", i);
+	    read_nbits(stream, 4, &precision, false);
+	    printf ("  précision: %d\n", precision);
+	    read_nbits(stream, 4, & iq, false);
+	    printf ("  indice: %d\n  ", iq);
+	    quantif[i].prec = precision;
+	    quantif[i].ind = iq ;
 
-	 for (uint8_t i =0 ; i<nb_tables; i++){
-
-	    if (i!=0){
-	       read_nbits(stream, 4, &precision, false);
-	       read_nbits(stream, 4, & iq, false);
-	       quantif[i].prec=precision;
-	       quantif[i].ind=iq ;
-	    }
-
-	    for (uint8_t j =0; j<64; j++){
+	    for (uint8_t j = 0; j < 64; j++) {
+	       if (!(j % 8)) {
+		  printf ("\n  ");
+	       }
 	       read_nbytes(stream, 1, &buf, false);
-	       quantif[i].val[j]=buf;
+	       quantif[i].val[j] = buf;
 	    }
 
-
+	    printf ("\n");
 	 }
 
 	 // passer en section suivante : skip ?

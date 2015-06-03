@@ -86,6 +86,7 @@ int main(int argc, char *argv[]){
    struct huff_table *huff_AC[4];
    struct huff_table *huff_DC[4];
 
+   uint32_t precision;
    uint32_t height;
    uint32_t width ;
    uint32_t N;
@@ -183,7 +184,6 @@ int main(int argc, char *argv[]){
 	    printf("erreur: plusieurs définitions des tables \n");
 	    exit (1);
 	 }
-	 uint32_t precision;
 	 uint32_t iq ;
 	 uint32_t nb_tables ;
 
@@ -226,25 +226,35 @@ int main(int argc, char *argv[]){
 	 printf ("SOF0: \n");
 
 	 read_nbytes(stream, 2, &longueur_section, false);
+	 printf (" longeur section: %d\n", longueur_section);
 	 read_nbytes(stream, 1, &precision, false);
+	 printf (" precision: %d\n", precision);
 	 read_nbytes(stream, 2, &height, false);
+	 printf (" height: %d\n", height);
 	 read_nbytes(stream, 2, &width, false);
+	 printf (" width: %d\n", width);
 	 read_nbytes(stream, 1, &N, false);
+	 printf (" N: %d\n", N);
 
-	 composantes=malloc(N*sizeof(struct unit));
+	 composantes = malloc(N*sizeof(struct unit));
 
-	 for(uint8_t i=0; i<N; i++){
+	 for(uint8_t i = 0; i < N; i++) {
+	    printf (" Composante %d\n", i);
+
 	    read_nbytes(stream, 1, &ic, false);
+	    printf (" ic: %d\n", ic);
 	    read_nbits(stream, 4, &sampling_factor_h , false);
+	    printf (" horizontal sampling factor: %d\n", sampling_factor_h);
 	    read_nbits(stream, 4, &sampling_factor_v, false);
+	    printf (" vertical sampling factor: %d\n", sampling_factor_v);
 	    read_nbytes(stream, 1, &iq, false);
+	    printf (" iq: %d\n", iq);
 
 	    composantes[i].ic=ic;
 	    composantes[i].iq=iq;
 	    composantes[i].sampling_factor_h= sampling_factor_h;
 	    composantes[i].sampling_factor_v=sampling_factor_v;
 	 }
-
 	 break;
       case 0xc4:			/* DHT */
 	 printf ("DHT: \n");

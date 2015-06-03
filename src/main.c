@@ -9,7 +9,9 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+#define DEBUG 1
 
 struct table_quantif {
    uint8_t val[64] ;
@@ -19,15 +21,25 @@ struct table_quantif {
 
 
 
-void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing){
+void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
+{
+   uint8_t nbLus = read_bitstream(stream, nb_bits, dest, byte_stuffing);
+   if (nbLus != nb_bits)
+      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
 
-   if (read_bitstream(stream, nb_bits, dest, byte_stuffing) != nb_bits)
-      printf("Erreur lecture bitstream");
+#if DEBUG
+   printf ("0x%x\n", *dest);
+#endif
 }
 
-void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing){
-   if (read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing) != 8*nb_bytes)
-      printf("Erreur lecture bitstream");
+void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
+{
+   uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
+   if (nbLus != 8*nb_bytes)
+      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
+#if DEBUG
+   printf ("0x%x\n", *dest);
+#endif
 }
 
 
@@ -48,11 +60,17 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
 int main(int argc, char *argv[]){
 
    // vérification de l'entrée
-   if ( argc != 2 )
-      printf("Veuillez entrer le fichier JPEG à décoder en argument. \n");
+   if ( argc != 2 ) {
+      fprintf(stderr, "Veuillez entrer le fichier JPEG à décoder en argument. \n");
+      exit (1);
+   }
 
-   struct bitstream *stream;
-   stream= create_bitstream(argv[1]);
+   struct bitstream *stream = create_bitstream(argv[1]);
+   if (!stream) {
+      fprintf(stderr, "Impossible de créer le bitstream\n");
+      exit (1);
+   }
+
 
    // EXTRACTION DE L ENTETE
 
@@ -61,9 +79,12 @@ int main(int argc, char *argv[]){
    bool unicite = true ; // vérifie que la déclaration des DQT est correcte
 
 
-   //saut marqueur SOI
-   skip_bitstream_until(stream, 0xd8);
-   read_nbytes(stream, 1,&buf, false);
+   // saut marqueur SOI
+   read_nbytes(stream, 2, &buf, false);
+   if (buf != 0xffd8) {
+      fprintf(stderr, "Le fichier en commence par un SOI mais 0x%x !\n", buf);
+      exit (1);
+   }
 
    // saut jusqu'au prochain marqueur de section
    skip_bitstream_until(stream, 0xff);

@@ -203,7 +203,7 @@ void libere_huffman (struct abr *huff)
    }
 }
 
-void libere_huffman (struct abr *huff)
+void free_huffman_table (struct huff_table *table)
 {
    if (table) {
       libere_huffman (table->huff_tree);

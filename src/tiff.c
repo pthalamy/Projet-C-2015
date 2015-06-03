@@ -12,7 +12,7 @@
 #define IMAGE_LENGTH 	 				 0x0101
 #define BITS_PER_SAMPLE 	 			 0x0102
 #define COMPRESSION  	 			         0x0103
-#define PHOTOMETRIC_INTERPRETATION                       0x0106
+#define PHOTOMETRIC_INTERPRETATION       0x0106
 #define STRIP_OFFSET  	 			         0x0111
 #define SAMPLE_PER_PIXEL  	 			 0x0115
 #define ROWS_PER_STRIP  	 			 0x0116
@@ -95,6 +95,7 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
 {
    /* Calcul du nombre de strip */
    uint32_t nb_strips = tfd->height / tfd->row_per_strip;
+   nb_strips += tfd->height / tfd->row_per_strip ? 1 : 0;
    tfd->nb_strips = nb_strips;
    /* printf ("nb_strips = %d\n", nb_strips); */
 

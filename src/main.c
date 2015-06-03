@@ -137,8 +137,7 @@ int main(int argc, char *argv[]){
       }
       break ;
 
-      //section COM
-   case 0xFE :
+   case 0xFE :			/* COM */
       read_nbytes(stream, 2, &longueur_section, false);
       for (uint8_t i =0; i<longueur_section ; i++){
 	 read_nbytes(stream, 1, &buf, false);
@@ -147,8 +146,7 @@ int main(int argc, char *argv[]){
 
       break ;
 
-      //section DQT
-   case 0Xdb:
+   case 0xdb:			/* DQT */
       if ( !unicite){
 	 printf("erreur: plusieurs définitions des tables \n");
       }
@@ -191,14 +189,11 @@ int main(int argc, char *argv[]){
 
       break ;
 
-      // secton SOF0
-   case 0xc0:
+   case 0xc0:			/* SOF0 */
       break;
-      //section DHT (tables huffman)
-   case 0xc4:
+   case 0xc4:			/* DHT */
       break ;
-      // section SOS
-   case 0xda:
+   case 0xda:			/* SOS */
       break ;
    default :
       printf("erreur, marqueur de section non reconnu \n");

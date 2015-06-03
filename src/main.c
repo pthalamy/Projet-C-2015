@@ -28,7 +28,6 @@ struct mcu{
    uint32_t ic;
    uint32_t ih_dc ;
    uint32_t ih_ac;
-
 };
 
 void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
@@ -47,9 +46,6 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
    printf ("%#.2x ", *dest);
 }
-
-
-
 
 /* void read_huffman(struct bitstream *stream, struct huffman table_AC[], struct huffman table_DC[]) { */
 /*    uint32_t buffer; */
@@ -184,7 +180,6 @@ int main(int argc, char *argv[]){
 	    printf("erreur: plusieurs définitions des tables \n");
 	    exit (1);
 	 }
-	 uint32_t iq ;
 	 uint32_t nb_tables ;
 
 	 //calcul du nombre de tables de la section
@@ -259,26 +254,62 @@ int main(int argc, char *argv[]){
       case 0xc4:			/* DHT */
 	 printf ("DHT: \n");
 	 read_nbytes(stream, 2, &longueur_section, false);
-	 longueur_section=longueur_section-2;
+	 printf (" longeur section: %d\n", longueur_section);
+	 uint16_t nb_byte_read = 2;
 
-	 read_nbytes(stream, 1, &longueur_section, false);
-	 longueur_section=longueur_section-2;
-	 exit (1);
+	 while (nb_byte_read < longueur_section) {
+	    uint32_t zeros;
+	    read_nbits(stream, 3, &zeros, false);
+	    if (zeros) {
+	       fprintf (stderr, " erreur: Les 3 premiers bits d'information de"
+			" la table de Huffman doivent valoir 0 /= %#x\n", zeros);
+	       exit (1);
+	    }
+
+	    uint32_t type;
+	    read_nbits(stream, 1, &type, false);
+	    printf (" type: %d\n", type);
+
+	    uint32_t indice;
+	    read_nbits(stream, 4, &indice, false);
+	    printf (" indice: %d\n", indice);
+	    if (indice > 3) {
+	       fprintf (stderr, " erreur: L'indice de la table de Huffman ne peut être %d > 3\n", indice);
+	       exit (1);
+	    }
+
+	    nb_byte_read++;
+	    uint16_t byteCount;
+
+	    if (type) {
+	       huff_AC[indice] = load_huffman_table(stream, &byteCount);
+	       compteur_huff_AC++;
+	    } else {
+	       huff_DC[indice] = load_huffman_table(stream, &byteCount);
+	       compteur_huff_DC++;
+	    }
+	    nb_byte_read += byteCount;
+	    printf ("nb bytes read: %d\n", nb_byte_read);
+	 }
 	 break ;
       case 0xda:			/* SOS */
 	 printf ("SOS: \n");
 
 	 read_nbytes(stream, 2, &longueur_section, false);
-	 longueur_section=longueur_section-2 ;
+	 printf (" longeur section: %d\n", longueur_section);
 
 	 read_nbytes(stream,1, &N, false );
+	 printf (" N: %d\n", N);
 
-	 mcu_array=malloc(N*sizeof(struct mcu));
+	 mcu_array = malloc(N*sizeof(struct mcu));
 
-	 for (uint8_t i=0; i<N; i++){
+	 for (uint8_t i = 0; i < N; i++){
 	    read_nbytes(stream, 1, &ic, false);
+	    printf (" indice: %d\n", ic);
 	    read_nbits(stream, 4, &ih_ac, false);
+	    printf (" indice huffman AC: %d\n", ih_ac);
 	    read_nbits(stream, 4, &ih_dc, false);
+	    printf (" indice huffman DC: %d\n", N);
 
 	    mcu_array[i].ic=ic;
 	    mcu_array[i].ih_ac=ih_ac;
@@ -317,5 +348,6 @@ int main(int argc, char *argv[]){
 
    /* /\*On desalloue le flux de bit *\/ */
    /* free_bistream(stream); */
+
    return 0;
 }

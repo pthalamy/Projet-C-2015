@@ -9,7 +9,7 @@
 
 #include <string.h>
 #include <stdio.h>
-
+#include <stdlib.h>
 
 struct table_quantif {
    uint8_t val[64] ;
@@ -48,8 +48,10 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
 int main(int argc, char *argv[]){
 
    // vérification de l'entrée
-   if ( argc != 2 )
+   if ( argc != 2 ) {
       printf("Veuillez entrer le fichier JPEG à décoder en argument. \n");
+      exit (1);
+   }
 
    struct bitstream *stream;
    stream= create_bitstream(argv[1]);

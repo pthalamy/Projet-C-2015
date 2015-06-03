@@ -91,6 +91,8 @@ int main(int argc, char *argv[]){
    read_nbytes(stream, 1, &buf, false);
    read_nbytes(stream, 1, &buf, false);
 
+   struct table_quantif *quantif;
+
    switch(buf){
 
       //APP0 : encapsulation JFIF
@@ -137,17 +139,35 @@ int main(int argc, char *argv[]){
 	 unicite=false ;
       }
 
+      // extraction de la précision et l'iq de la 1e table
+       read_nbits(stream, 4, &precision, false);
+       read_nbits(stream, 4, & iq, false);
+
+      // ok dans le cas ou une section et plusieurs tables
+      // cas une table par section (plusieurs sections a faire)
+      quantif = malloc (nb_tables * sizeof(struct table_quantif));
+      quantif[0].ind=iq ;
+      quantif[0].prec=precision ;
+
       for (uint8_t i =0 ; i<nb_tables; i++){
+
+	 if (i!=0){
+	 read_nbits(stream, 4, &precision, false);
+	 read_nbits(stream, 4, & iq, false);
+	 quantif[i].prec=precision;
+	 quantif[i].ind=iq ;
+	  }
+
+	 for (uint8_t j =0; j<64; j++){
+	    read_nbytes(stream, 1, &buf, false);
+	    quantif[i].val[j]=buf;
+	 }
 
 
       }
 
-
-      read_nbits(stream, 4, &precision, false);
-      read_nbits(stream, 4, & iq, false);
-
-
       break ;
+
       // secton SOF0
    case 0xc0:
       break;

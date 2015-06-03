@@ -24,6 +24,12 @@ struct unit{
    uint8_t sampling_factor_v ;
 };
 
+struct mcu{
+   uint32_t ic;
+   uint32_t ih_dc ;
+   uint32_t ih_ac;
+
+};
 
 void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
 {
@@ -88,6 +94,9 @@ int main(int argc, char *argv[]){
    uint32_t sampling_factor_h;
    uint32_t sampling_factor_v;
 
+   uint32_t ih_ac;
+   uint32_t ih_dc;
+
    // saut marqueur SOI
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
@@ -104,6 +113,7 @@ int main(int argc, char *argv[]){
 
       struct table_quantif *quantif;
       struct unit *composantes ;
+      struct mcu *mcu_array ;
       switch(buf){
 
 	 //APP0 : encapsulation JFIF
@@ -247,10 +257,27 @@ int main(int argc, char *argv[]){
 	 break ;
       case 0xda:			/* SOS */
 	 printf ("SOS: \n");
-	 exit (1);
+
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 longueur_section=longueur_section-2 ;
+
+	 read_nbytes(stream,1, &N, false );
+
+	 mcu_array=malloc(N*sizeof(struct mcu));
+
+	 for (uint8_t i=0; i<N; i++){
+	    read_nbytes(stream, 1, &ic, false);
+	    read_nbits(stream, 4, &ih_ac, false);
+	    read_nbits(stream, 4, &ih_dc, false);
+
+	    mcu_array[i].ic=ic;
+	    mcu_array[i].ih_ac=ih_ac;
+	    mcu_array[i].ih_dc=ih_dc ;
+	 }
+
 	 break ;
       case 0xd9:		/* EOI */
-	 printf ("EOI: \n");
+	 printf ("EOI: fin de fichier  \n");
 	 return 0;
 	 break;
       default :

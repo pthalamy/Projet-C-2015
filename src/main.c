@@ -193,12 +193,14 @@ int main(int argc, char *argv[]){
       // passer en section suivante : skip ?
       break ;
 
-      // secton SOF0
+      // section SOF0
 
       struct huff_table *huff_AC[4];
       struct huff_table *huff_DC[4];
 
    case 0xc0:
+
+
       break;
       //section DHT (tables huffman)
    case 0xc4:
@@ -220,52 +222,6 @@ int main(int argc, char *argv[]){
 
    }
 
-   /* /\*extraction de l'entete*\/ */
-   /* skip_bitstream(stream, 0xd8); */
-   /* uint32_t buffer; */
-   /* uint32_t longueur_en_tete; */
-   /* uint32_t en_tete; */
-   /* read_nbits(stream, 8, &buffer, false); */
-   /* read_nbits(stream, 16, &longeur_en_tete, false); */
-   /* read_nbits(stream, longeur_en_tete, &en_tete, false); */
-
-   /* /\*recuperation de la table de quantification*\/ */
-   /* skip_bitstream(stream, 0xdb); */
-   /* uint8_t quantif[64]; */
-   /* /\*uint32_t i_q; */
-   /*   read_nbits(stream, 28, &buffer, false); */
-   /*   read_nbits(stream, 4, &i_q, false); *\/ */
-   /* read_nbits(stream, 24, &buffer, false); */
-   /* for ( uint32_t i=0; i < 64; i++) */
-   /*    read_nbits(stream, 8, &quantif[i], false); */
-
-   /* /\*recuperation des facteurs d'echantillonage*\/ */
-   /* skip_bitstream(stream, 0xc0); */
-   /* uint32_t nb_composants; */
-   /* read_nbits(stream, 9*8, &buffer, false); */
-   /* read_nbits(stream, 8, &nb_composants, false); */
-   /* uint32_t sampling_factor_h[nb_composants]; */
-   /* uint32_t sampling_factor_v[nb_composants]; */
-   /* for ( uint32_t i=0; i < nb_composants; i++) { */
-   /*    read_nbits(stream, 8, &buffer, false); */
-   /*    read_nbits(stream, 4, &sampling_factor_h[i], false); */
-   /*    read_nbits(stream, 4, &sampling_factor_v[i], false); */
-   /* } */
-
-   /* /\*recuperation des tables de Huffman*\/ */
-   /* skip_be=itstream(stream, 0xc4); */
-   /* uint32_t longeur_section; */
-   /* uint32_t val_erreur; */
-   /* read_nbits(stream, 8, &buffer, false); */
-   /* read_nbits(stream, 16, &longeur_section, false); */
-   /* read_nbits(stream, 3, &val_erreur, false); //3bits non utilisés, doit valoir 0 */
-   /* if ( val_erreur != 0) */
-   /*    printf("Erreur!"); */
-   /* uint16_t nb_byte_read; */
-   /* struct huffman table_AC[4]; */
-   /* struct huffman table_DC[4]; */
-   /* read_huffman(stream, table_AC[], table_DC[]); */
-
    /* /\*extraction, decompression, multiplication par les facteurs et */
    /*  * réorganisation zizgag des données des blocs */
    /*  * + transform&e en cosinus discrete inverse*\/ */
@@ -279,9 +235,6 @@ int main(int argc, char *argv[]){
    /*    idct_block(out_iqzz, out_idct); //calcul transformée en cosinus discrete inverse */
    /* } */
 
-   /* /\*Reconstitution des MCU*\/ */
-
-   /* /\*Conversion YCbCr vers RGB de chaque pixel*\/ */
 
    /* /\*ecriture dans le TIFF*\/ */
    /* struct tiff_file_desc *TIFF; */

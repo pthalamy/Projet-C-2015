@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG 1
-
 struct table_quantif {
    uint8_t val[64] ;
    uint8_t ind ;
@@ -27,9 +25,7 @@ void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool 
    if (nbLus != nb_bits)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
 
-#if DEBUG
    printf ("0x%x\n", *dest);
-#endif
 }
 
 void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
@@ -37,9 +33,7 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
    uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
    if (nbLus != 8*nb_bytes)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
-#if DEBUG
    printf ("0x%x\n", *dest);
-#endif
 }
 
 
@@ -71,9 +65,7 @@ int main(int argc, char *argv[]){
       exit (1);
    }
 
-
    // EXTRACTION DE L ENTETE
-
    uint32_t buf;
    uint32_t longueur_section ;
    bool unicite = true ; // vérifie que la déclaration des DQT est correcte
@@ -86,9 +78,8 @@ int main(int argc, char *argv[]){
       exit (1);
    }
 
-   // saut jusqu'au prochain marqueur de section
-   skip_bitstream_until(stream, 0xff);
-   read_nbytes(stream, 1, &buf, false);
+   // Lecture du premier marqueur de section
+   read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
    read_nbytes(stream, 1, &buf, false);
 
    struct table_quantif *quantif;
@@ -97,21 +88,53 @@ int main(int argc, char *argv[]){
 
       //APP0 : encapsulation JFIF
    case 0xe0 :
+      printf ("APP0: \n");
       read_nbytes(stream, 2, &longueur_section, false);
-      longueur_section=longueur_section-2;
+      longueur_section = longueur_section;
+      printf (" longeur section: %d\n", longueur_section);
 
-      read_nbytes(stream, 4, &buf, false);
+      /* Lecture  de JFIF */
       char jfif[5];
-      jfif[0] = (buf >> 24) & 0xff;
-      jfif[1] = (buf >> 16) & 0xff;
-      jfif[2] = (buf >> 8) & 0xff;
-      jfif[3] = buf &  0xff;
-      jfif[4] = '\0';
-      if (strcmp (jfif, "JFIF"))
-	 fprintf (stderr, "erreur APP0 : JFIF absent\n");
-
+      read_nbytes(stream, 1, (uint32_t*)&jfif[0], false);
+      read_nbytes(stream, 1, (uint32_t*)&jfif[1], false);
+      read_nbytes(stream, 1, (uint32_t*)&jfif[2], false);
+      read_nbytes(stream, 1, (uint32_t*)&jfif[3], false);
+      read_nbytes(stream, 1, (uint32_t*)&jfif[4], false);
+      if (strcmp (jfif, "JFIF")) {
+	 fprintf (stderr, "erreur APP0 : JFIF absent <= %s\n", jfif);
+	 exit (1);
+      }
 
       // PASSER A LA FIN DE LA SECTION (SKIP ou READBYTES ?)
+      /* Lecture des données additionnelles */
+      uint32_t version;
+      read_nbytes(stream, 2, &version, false);
+      printf (" version JFIF: %d\n", version);
+
+      uint32_t densityUnits;
+      read_nbytes(stream, 1, &densityUnits, false);
+      printf ("  density unit: %d\n", densityUnits);
+
+      uint32_t xDensity;
+      read_nbytes(stream, 2, &xDensity, false);
+      printf ("  x density: %d\n", xDensity);
+
+      uint32_t yDensity;
+      read_nbytes(stream, 2, &yDensity, false);
+      printf ("  y density: %d\n", yDensity);
+
+      uint32_t tw;
+      read_nbytes(stream, 1, &tw, false);
+      printf ("  thumbnail width: %d\n", tw);
+
+      uint32_t th;
+      read_nbytes(stream, 1, &th, false);
+      printf ("  thumbnail height: %d\n", th);
+
+      uint32_t t_data;
+      for (uint8_t i = 0; i < tw*th ; i++){
+	 read_nbytes(stream, 3, &t_data, false);
+      }
       break ;
 
       //section COM

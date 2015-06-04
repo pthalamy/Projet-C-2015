@@ -22,13 +22,15 @@ struct unit{
    uint8_t iq;
    uint8_t sampling_factor_h ;
    uint8_t sampling_factor_v ;
+   uint8_t ih_ac;		/* indice de huffman AC */
+   uint8_t ih_dc; 		/* indice de huffman DC  */
 };
 
-struct mcu{
-   uint32_t ic;
-   uint32_t ih_dc ;
-   uint32_t ih_ac;
-};
+/* struct mcu{ */
+/*    uint32_t ic; */
+/*    uint32_t ih_dc ; */
+/*    uint32_t ih_ac; */
+/* }; */
 
 void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
 {
@@ -45,6 +47,21 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
    if (nbLus != 8*nb_bytes)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
    printf ("%#.2x ", *dest);
+}
+
+/* Renvoie l'indice correspondant à l'élément d'ic en argument
+   dans le tableau composantes de N élements */
+uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
+{
+   /* if (!composantes) */
+   /*    printf ("dégout\n"); */
+
+   for (uint8_t i = 0; i < N; i++)
+      if (composantes[i].ic == ic)
+	 return i;
+
+   fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
+   exit (1);
 }
 
 /* void read_huffman(struct bitstream *stream, struct huffman table_AC[], struct huffman table_DC[]) { */
@@ -81,6 +98,10 @@ int main(int argc, char *argv[]){
    uint8_t compteur_huff_DC = 0;
    struct huff_table *huff_AC[4];
    struct huff_table *huff_DC[4];
+   uint32_t nb_blocks_scan;
+   struct table_quantif *quantif;
+   struct unit *composantes = NULL;
+   int32_t **mcus ;
 
    uint32_t precision;
    uint32_t height;
@@ -108,9 +129,6 @@ int main(int argc, char *argv[]){
       read_nbytes(stream, 1, &buf, false);
       printf ("\n");
 
-      struct table_quantif *quantif;
-      struct unit *composantes ;
-      struct mcu *mcu_array ;
       switch(buf){
 
 	 //APP0 : encapsulation JFIF
@@ -224,10 +242,12 @@ int main(int argc, char *argv[]){
 	 printf (" longeur section: %d\n", longueur_section);
 	 read_nbytes(stream, 1, &precision, false);
 	 printf (" precision: %d\n", precision);
+
 	 read_nbytes(stream, 2, &height, false);
 	 printf (" height: %d\n", height);
 	 read_nbytes(stream, 2, &width, false);
 	 printf (" width: %d\n", width);
+
 	 read_nbytes(stream, 1, &N, false);
 	 printf (" N: %d\n", N);
 
@@ -245,10 +265,10 @@ int main(int argc, char *argv[]){
 	    read_nbytes(stream, 1, &iq, false);
 	    printf (" iq: %d\n", iq);
 
-	    composantes[i].ic=ic;
-	    composantes[i].iq=iq;
-	    composantes[i].sampling_factor_h= sampling_factor_h;
-	    composantes[i].sampling_factor_v=sampling_factor_v;
+	    composantes[i].ic = ic;
+	    composantes[i].iq = iq;
+	    composantes[i].sampling_factor_h = sampling_factor_h;
+	    composantes[i].sampling_factor_v = sampling_factor_v;
 	 }
 	 break;
       case 0xc4:			/* DHT */
@@ -293,6 +313,7 @@ int main(int argc, char *argv[]){
 	 }
 	 break ;
       case 0xda:			/* SOS */
+      {
 	 printf ("SOS: \n");
 
 	 read_nbytes(stream, 2, &longueur_section, false);
@@ -301,21 +322,57 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream,1, &N, false );
 	 printf (" N: %d\n", N);
 
-	 mcu_array = malloc(N*sizeof(struct mcu));
+	 /* Calcul du nombre blocs 8x8 dans l'image */
+	 uint32_t nb_blocks_h = (height / 8) + (height % 8 ? 1 : 0);
+	 uint32_t nb_blocks_v = (width / 8) + (width % 8 ? 1 : 0);
+	 nb_blocks_scan = N * nb_blocks_h * nb_blocks_v;
+	 printf ("nb_blocks_scan: %d\n", nb_blocks_scan);
+	 uint8_t ordre_composantes[N];
+	 uint8_t index;
 
 	 for (uint8_t i = 0; i < N; i++){
 	    read_nbytes(stream, 1, &ic, false);
 	    printf (" indice: %d\n", ic);
+	    ordre_composantes[i] = ic;
 	    read_nbits(stream, 4, &ih_ac, false);
 	    printf (" indice huffman AC: %d\n", ih_ac);
 	    read_nbits(stream, 4, &ih_dc, false);
 	    printf (" indice huffman DC: %d\n", N);
 
-	    mcu_array[i].ic=ic;
-	    mcu_array[i].ih_ac=ih_ac;
-	    mcu_array[i].ih_dc=ih_dc ;
+	    index = ic_to_i (composantes, N, ic);
+	    composantes[index].ih_ac = ih_ac;
+	    composantes[index].ih_dc = ih_dc ;
+	 }
+	 mcus = malloc(nb_blocks_scan*sizeof(int32_t *));
+	 for (uint32_t i = 0; i < nb_blocks_scan; i++) {
+	    mcus[i] = malloc(64*sizeof(int32_t));
 	 }
 
+	 int32_t pred_DC = 0;
+
+	 /* Récupération des blocs 8*8 du fichier d'entrée selon l'échantillonnage utilisé */
+	 uint32_t i = 0;
+	 while (i < nb_blocks_scan) {
+	    for (uint8_t c = 0; c < N; c++) {
+	       printf ("N: %d\n", N);
+	       index = ic_to_i (composantes, N, ordre_composantes[c]);
+	       printf ("index: %d\n", index);
+	       for (uint8_t j = 0;
+		    j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
+		    j++) {
+		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC);
+		  if (i == 1188) {
+		     uint32_t buf;
+		     read_nbytes(stream, 4, &buf, false);
+		     printf ("\n");
+		     exit (1);
+		  }
+		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC,
+			       huff_AC[composantes[index].ih_ac], mcus[i++]);
+	       }
+	    }
+	 }
+      }
 	 break ;
       case 0xd9:		/* EOI */
 	 printf ("EOI: fin de fichier  \n");

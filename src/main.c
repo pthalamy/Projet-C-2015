@@ -98,15 +98,24 @@ int main(int argc, char *argv[]){
    uint8_t compteur_huff_DC = 0;
    struct huff_table *huff_AC[4];
    struct huff_table *huff_DC[4];
+
+   uint32_t nb_blocks_h;
+   uint32_t nb_blocks_v;
    uint32_t nb_blocks_scan;
-   struct table_quantif *quantif;
+   uint8_t taille_mcu_blocs;
+
+   struct table_quantif *quantif = NULL;
    struct unit *composantes = NULL;
-   int32_t **mcus ;
+   int32_t **blocs ;
 
    uint32_t precision;
    uint32_t height;
    uint32_t width ;
+
    uint32_t N;
+   uint8_t *ordre_composantes;
+   uint8_t index;
+
    uint32_t ic;
    uint32_t iq;
    uint32_t sampling_factor_h;
@@ -122,7 +131,9 @@ int main(int argc, char *argv[]){
       exit (1);
    }
 
-   while (true) {
+   bool decoded_sos = false;
+
+   while (!decoded_sos) {
 
       // Lecture du premier marqueur de section
       read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
@@ -322,13 +333,7 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream,1, &N, false );
 	 printf (" N: %d\n", N);
 
-	 /* Calcul du nombre blocs 8x8 dans l'image */
-	 uint32_t nb_blocks_h = (height / 8) + (height % 8 ? 1 : 0);
-	 uint32_t nb_blocks_v = (width / 8) + (width % 8 ? 1 : 0);
-	 nb_blocks_scan = N * nb_blocks_h * nb_blocks_v;
-	 printf ("nb_blocks_scan: %d\n", nb_blocks_scan);
-	 uint8_t ordre_composantes[N];
-	 uint8_t index;
+	 ordre_composantes = malloc (N * sizeof(uint8_t));
 
 	 for (uint8_t i = 0; i < N; i++){
 	    read_nbytes(stream, 1, &ic, false);
@@ -343,9 +348,25 @@ int main(int argc, char *argv[]){
 	    composantes[index].ih_ac = ih_ac;
 	    composantes[index].ih_dc = ih_dc ;
 	 }
-	 mcus = malloc(nb_blocks_scan*sizeof(int32_t *));
+
+	 /* Calcul du nombre blocs 8x8 dans l'image */
+	 nb_blocks_h = (height / 8) + (height % 8 ? 1 : 0);
+	 nb_blocks_v = (width / 8) + (width % 8 ? 1 : 0);
+	 nb_blocks_scan = nb_blocks_h * nb_blocks_v;
+	 /* for  (uint8_t i = 0; i <N; i++) { */
+	 /*    nb_blocks_scan += composantes[i]. */
+	 /* } */
+
+	 nb_blocks_scan += 2 *(nb_blocks_scan / (composantes[0].sampling_factor_h*composantes[0].sampling_factor_v));
+
+	 printf ("nb_blocks_scan: %d\n", nb_blocks_scan);
+
+	 uint32_t bits_inutiles;
+	 read_nbytes(stream, 3, &bits_inutiles, false);
+
+	 blocs = malloc(nb_blocks_scan*sizeof(int32_t *));
 	 for (uint32_t i = 0; i < nb_blocks_scan; i++) {
-	    mcus[i] = malloc(64*sizeof(int32_t));
+	    blocs[i] = malloc(64*sizeof(int32_t));
 	 }
 
 	 int32_t pred_DC = 0;
@@ -361,19 +382,15 @@ int main(int argc, char *argv[]){
 		    j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
 		    j++) {
 		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC);
-		  if (i == 1188) {
-		     uint32_t buf;
-		     read_nbytes(stream, 4, &buf, false);
-		     printf ("\n");
-		     exit (1);
-		  }
 		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC,
-			       huff_AC[composantes[index].ih_ac], mcus[i++]);
+			       huff_AC[composantes[index].ih_ac], blocs[i++]);
 	       }
 	    }
 	 }
+
+	 decoded_sos = true;
       }
-	 break ;
+      break ;
       case 0xd9:		/* EOI */
 	 printf ("EOI: fin de fichier  \n");
 	 return 0;
@@ -383,28 +400,108 @@ int main(int argc, char *argv[]){
 	 exit (1);
       }
    }
-   /* /\*extraction, decompression, multiplication par les facteurs et */
-   /*  * réorganisation zizgag des données des blocs */
-   /*  * + transform&e en cosinus discrete inverse*\/ */
-   /* for ( uint32_t i=0; i < 4; i++) { */
-   /*    uint32_t bloc[64]; */
-   /*    uint32_t out_iqzz[64]; */
-   /*    uint32_t out_idct[64]; */
-   /*    uint32_t *prec_DC; */
-   /*    unpack_block(stream, &table_DC[i], prec_DC, &table_AC[i], bloc); //extraction et decompression */
-   /*    iqzz_block(bloc, out_iqzz, quantif); //reorganisation zigzag */
-   /*    idct_block(out_iqzz, out_idct); //calcul transformée en cosinus discrete inverse */
-   /* } */
 
+   /* IQZZ */
 
-   /* /\*ecriture dans le TIFF*\/ */
-   /* struct tiff_file_desc *TIFF; */
-   /* TIFF = init_tiff_file(&argv[1], ); */
-   /* write_tiff_file(TIFF, mcu_rgb, nb_blocks_h, nb_blocks_v); */
-   /* clos_tifffile(TIFF); */
+   int32_t **blocs_iqzz = malloc(nb_blocks_scan*sizeof(int32_t *));
+   for (uint32_t i = 0; i < nb_blocks_scan; i++) {
+      blocs_iqzz[i] = malloc(64*sizeof(int32_t));
+   }
 
-   /* /\*On desalloue le flux de bit *\/ */
-   /* free_bistream(stream); */
+   uint32_t i = 0;
+   while (i < nb_blocks_scan) {
+      for (uint8_t c = 0; c < N; c++) {
+	 index = ic_to_i (composantes, N, ordre_composantes[c]);
+	 for (uint8_t j = 0;
+	      j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
+	      j++) {
+	    printf ("iqzz %d | iq = %d\n", i, composantes[index].iq);
+	    /* Tables de quantif peut être pas rangées par indice */
+	    iqzz_block (blocs[i], blocs_iqzz[i], quantif[composantes[index].iq].val);
+	    i++;
+	 }
+      }
+   }
+
+   free (blocs);
+
+   /* IDCT */
+
+   uint8_t **blocs_idct = malloc(nb_blocks_scan*sizeof(uint8_t *));
+   for (uint32_t i = 0; i < nb_blocks_scan; i++) {
+      blocs_idct[i] = malloc(64*sizeof(uint8_t));
+   }
+
+   for (uint32_t i = 0; i < nb_blocks_scan; i++) {
+      printf ("idct %d\n", i);
+      idct_block(blocs_iqzz[i], blocs_idct[i]);
+   }
+
+   free (blocs_iqzz);
+
+   /* UPSAMPLING */
+   /* TODO: Gerer indices non fixés */
+   taille_mcu_blocs  = composantes[0].sampling_factor_h*composantes[0].sampling_factor_v;
+   printf ("taille_mcu_blocs: %d\n", taille_mcu_blocs);
+   uint32_t nb_mcus  = ((nb_blocks_h * nb_blocks_v) / (taille_mcu_blocs)) * N;
+   printf ("nb_mcus: %d\n", nb_mcus);
+   uint8_t **mcus = malloc(nb_mcus*sizeof(uint8_t *));
+   for (uint32_t i = 0; i < nb_mcus; i++) {
+      mcus[i] = malloc(64*taille_mcu_blocs*sizeof(uint8_t));
+   }
+
+   i = 0;
+   uint32_t k = 0;
+   uint32_t c = ordre_composantes[0];
+   while (i < nb_blocks_scan) {
+      index = ic_to_i (composantes, N, ordre_composantes[c]);
+      printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
+      if (index == 0) {
+	 upsampler(blocs_idct[i], composantes[0].sampling_factor_h, composantes[0].sampling_factor_v,
+		   mcus[k++], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+	 i += taille_mcu_blocs;
+      } else {
+	 upsampler(blocs_idct[i], 1, 1,
+		   mcus[k++], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+	 i++;
+      }
+      c = (c+1) % 3;
+   }
+
+   free (blocs_idct);
+
+   /* YCbCr to ARGB */
+
+   uint32_t nb_mcus_RGB  = nb_mcus / N;
+   printf ("nb_mcus_rgb: %d\n", nb_mcus_RGB);
+   uint32_t **mcus_RGB = malloc(nb_mcus*sizeof(uint32_t *));
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+      mcus_RGB[i] = malloc(64*taille_mcu_blocs*sizeof(uint32_t));
+   }
+
+   k = 0;
+   for (uint32_t i = 0; i < nb_mcus_RGB; i += 3) {
+      printf ("YCbCr2ARGB %d | k = %d \n", i, k);
+      YCbCr_to_ARGB(&mcus[i], mcus_RGB[k++],
+		    composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
+   }
+
+   free (mcus);
+
+   /* ecriture dans le TIFF */
+
+   struct tiff_file_desc *tfd = init_tiff_file("test.tiff", width, height,
+					       8 * composantes[0].sampling_factor_v);
+
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+      printf ("Write TIFF %d\n", i);
+      write_tiff_file(tfd, mcus_RGB[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+   }
+
+   close_tiff_file (tfd);
+
+/*On desalloue le flux de bit */
+   free_bitstream(stream);
 
    return 0;
 }

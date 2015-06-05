@@ -12,9 +12,23 @@ void contraction_1_to_1(uint8_t *in, uint8_t *out){
    /* 2 bloc 4*4 -> bloc 4*2 */
    void contraction_2_to_1(uint8_t *in, uint8_t *out){
 
+      uint8_t *temp=malloc(16*sizeof(uint8_t));
+
+      /* pour chaque bloc, 4*4->4*2 */
       for (uint8_t i=0; i<32 ; i+=2){
-	 out[i/2]=(uint8_t)(0.5*((float)in[i]+(float)in[i+1]));
+	 temp[i/2]=0.5*(in[i]+in[i+1]);
       }
+
+      /* Réordonnement: juxtaposition des deux blocs */
+
+      for (uint8_t i=0; i<4; i++){
+	 for (uint8_t j =0; j<2;j++) {
+	    out[4*i+j]=temp[2*i+j];
+	    out[4*i+j+2]=temp[2*i+8+j];
+	 }
+
+      }
+      free(temp);
 
    };
 
@@ -26,7 +40,11 @@ void contraction_1_to_1(uint8_t *in, uint8_t *out){
 
       uint8_t *temp=malloc(16*sizeof(uint8_t));
 
+      /* on sépare les 4 blocs en 2*2 blocs pour les passer en paramètres de  contraction 2 to 1 */
+
+
       contraction_2_to_1(in ,temp);
+
 
 
       for (uint8_t i=0; i<4; i+=2){
@@ -78,7 +96,7 @@ int main(void){
    uint8_t*out_21=malloc(16*sizeof(uint8_t));
    contraction_2_to_1(tab32, out_21);
    printf("contraction 2->1 \n");
-   affiche_tab(out_21, 2,8) ;
+   affiche_tab(out_21, 4,4) ;
 
    uint8_t *out_41=malloc(4*sizeof(uint8_t));
    contraction_4_to_1(tab, out_41);

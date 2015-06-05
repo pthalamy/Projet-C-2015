@@ -12,14 +12,26 @@ void contraction_1_to_1(uint8_t *in, uint8_t *out){
       }
    }
 
-   /*2 blocs 8*8 -> 2 blocs 8*4 */
+   /*2 blocs 8*8 -> 2 blocs 8*4 ->1 bloc 8*8 */
    void contraction_2_to_1(uint8_t *in, uint8_t *out){
+
+      uint8_t *temp=malloc(64*sizeof(uint8_t));
 
       /* pour chaque bloc, 8*8 ->8*4 */
       for (uint8_t i=0; i<128 ; i+=2){
-	 out[i/2]=0.5*(in[i]+in[i+1]);
+	 temp[i/2]=0.5*(in[i]+in[i+1]);
       }
 
+      /* Réordonnement: juxtaposition des deux blocs */
+
+      for (uint8_t i=0; i<8; i++){
+	 for (uint8_t j =0; j<4;j++) {
+	    out[8*i+j]=temp[4*i+j];
+	    out[8*i+j+4]=temp[4*i+32+j];
+	 }
+
+      }
+      free(temp);
    };
 
 

@@ -79,10 +79,25 @@ void contraction_1_to_1(uint8_t *in, uint8_t *out){
 
 
    void downsampler(uint8_t *in,
-		    uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
-		    uint8_t *out,
-		    uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v){
+		    uint8_t nb_blocks_in, uint8_t nb_blocks_out,
+		    uint8_t *out){
 
 
+      /* pas de sous échantillonnage */
+      if (nb_blocks_in==nb_blocks_out) {
+	 contraction_1_to_1(in, out);
+      }
 
+      /* sous échantillonnage 4:2:2*/
+      else if (nb_blocks_in==2*nb_blocks_out){
+	 contraction_2_to_1(in, out);
+      }
+
+      else if (nb_blocks_in==nb_blocks_out){
+	 contraction_4_to_1(in, out);
+      }
+
+      else {
+	 printf("ERREUR : format de sous échantillonnage non supporté");
+      }
    }

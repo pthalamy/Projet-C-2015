@@ -130,6 +130,7 @@ int main(int argc, char *argv[]){
    uint32_t buf;
    uint32_t longueur_section ;
    bool unicite = true ; // vérifie que la déclaration des DQT est correcte
+
    uint8_t compteur_huff_AC = 0 ; // comptent le nb de tables définies
    uint8_t compteur_huff_DC = 0;
    struct huff_table *huff_AC[4];
@@ -488,7 +489,7 @@ int main(int argc, char *argv[]){
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++)
       free (blocs_iqzz[i]);
-   free (blocs_iqzz[i]);
+   free (blocs_iqzz);
 
 
    /* UPSAMPLING */
@@ -525,7 +526,7 @@ int main(int argc, char *argv[]){
 		   mcus[k], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
       }
 
-      free  (up_blocs);
+      free (up_blocs);
 
       /* printf ("num_blocks_in_h: %d | _v: %d\n", */
       /* 	      composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
@@ -541,7 +542,7 @@ int main(int argc, char *argv[]){
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++)
       free (blocs_idct[i]);
-   free (blocs_idct[i]);
+   free (blocs_idct);
 
    /* YCbCr to ARGB */
 
@@ -577,9 +578,15 @@ int main(int argc, char *argv[]){
       free (mcus_RGB[i]);
    free (mcus_RGB);
 
+   for (uint32_t i = 0; i < compteur_huff_AC; i++)
+      free_huffman_table (huff_AC[i]);
+   for (uint32_t i = 0; i < compteur_huff_DC; i++)
+      free_huffman_table (huff_DC[i]);
 
-/*On desalloue le flux de bit */
    free_bitstream(stream);
+   free (composantes);
+   free (ordre_composantes);
+   free (quantif);
 
    return 0;
 }

@@ -14,7 +14,6 @@
 struct table_quantif {
    uint8_t val[64] ;
    uint8_t ind ;
-   uint8_t prec;
 };
 
 struct unit{
@@ -61,7 +60,7 @@ void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool 
    if (nbLus != nb_bits)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
 
-   printf ("%#.2x ", *dest);
+   /* printf ("%#.2x ", *dest); */
 }
 
 void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
@@ -69,7 +68,7 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
    uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
    if (nbLus != 8*nb_bytes)
       fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
-   printf ("%#.2x ", *dest);
+   /* printf ("%#.2x ", *dest); */
 }
 
 /* Renvoie l'indice correspondant à l'élément d'ic en argument
@@ -87,6 +86,21 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
    exit (1);
 }
 
+/* /\* Renvoie l'indice correspondant à l'élément d'iq en argument */
+/*    dans le tableau quantif de N élements *\/ */
+/* uint8_t iq_to_i(struct table_quantif *quantif, uint32_t nb_tables, uint32_t ic) */
+/* { */
+/*    /\* if (!composantes) *\/ */
+/*    /\*    printf ("dégout\n"); *\/ */
+
+/*    for (uint8_t i = 0; i < N; i++) */
+/*       if (composantes[i].ic == ic) */
+/* 	 return i; */
+
+/*    fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic); */
+/*    exit (1); */
+/* } */
+
 uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
 {
    uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
@@ -99,18 +113,6 @@ uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
 
    return out;
 }
-
-/* void read_huffman(struct bitstream *stream, struct huffman table_AC[], struct huffman table_DC[]) { */
-/*    uint32_t buffer; */
-/*    uint32_t longueur_section ; */
-/*    read_nbits(stream, 1, &buffer, false); */
-/*    if ( buffer = 0 )             // type DC */
-/*       table_DC[0] = load_huffman_table(stream, &nb_byte_read); */
-/*    else if ( buffer = 1 )        // type AC */
-/*       table_AC[0] = load_huffman_table(stream, &nb_byte_read); */
-/*    while ( nb_byte_read < longueur_section ) */
-/*       read_huffman(stream, table_AC[], table_DC[]); */
-/* } */
 
 int main(int argc, char *argv[]){
 
@@ -142,6 +144,8 @@ int main(int argc, char *argv[]){
    uint8_t sampling = 0;
 
    struct table_quantif *quantif = NULL;
+   uint32_t nb_tables = 0 ;
+
    struct unit *composantes = NULL;
    int32_t **blocs ;
 
@@ -160,6 +164,8 @@ int main(int argc, char *argv[]){
 
    uint32_t ih_ac;
    uint32_t ih_dc;
+
+   /* uint32_t unused; */
 
    // saut marqueur SOI
    read_nbytes(stream, 2, &buf, false);
@@ -202,27 +208,27 @@ int main(int argc, char *argv[]){
 	 /* Lecture des données additionnelles */
 	 uint32_t version;
 	 read_nbytes(stream, 2, &version, false);
-	 printf (" version JFIF: %d\n", version);
+	 /* printf (" version JFIF: %d\n", version); */
 
 	 uint32_t densityUnits;
 	 read_nbytes(stream, 1, &densityUnits, false);
-	 printf ("  density unit: %d\n", densityUnits);
+	 /* printf ("  density unit: %d\n", densityUnits); */
 
 	 uint32_t xDensity;
 	 read_nbytes(stream, 2, &xDensity, false);
-	 printf ("  x density: %d\n", xDensity);
+	 /* printf ("  x density: %d\n", xDensity); */
 
 	 uint32_t yDensity;
 	 read_nbytes(stream, 2, &yDensity, false);
-	 printf ("  y density: %d\n", yDensity);
+	 /* printf ("  y density: %d\n", yDensity); */
 
 	 uint32_t tw;
 	 read_nbytes(stream, 1, &tw, false);
-	 printf ("  thumbnail width: %d\n", tw);
+	 /* printf ("  thumbnail width: %d\n", tw); */
 
 	 uint32_t th;
 	 read_nbytes(stream, 1, &th, false);
-	 printf ("  thumbnail height: %d\n", th);
+	 /* printf ("  thumbnail height: %d\n", th); */
 
 	 uint32_t t_data;
 	 for (uint8_t i = 0; i < tw*th ; i++){
@@ -242,53 +248,68 @@ int main(int argc, char *argv[]){
 
       case 0xdb:			/* DQT */
 	 printf ("DQT: \n");
-	 if ( !unicite){
-	    printf("erreur: plusieurs définitions des tables \n");
+
+	 if (!unicite){
+	    printf("erreur: plusieurs définitions des tablesde quantification \n");
 	    exit (1);
 	 }
-	 uint32_t nb_tables ;
 
 	 //calcul du nombre de tables de la section
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 printf (" longeur section: %d\n", longueur_section);
-	 nb_tables = (longueur_section-2) / 65;
-	 printf (" nombre de tables: %d\n", nb_tables);
+	 uint32_t nb_tables_section = (longueur_section-2) / 65;
+	 printf (" nombre de tables: %d\n", nb_tables_section);
 
-	 if (nb_tables != 1) {
+	 if (nb_tables_section != 1) {
 	    unicite = false ;
 	 }
 
-	 // ok dans le cas ou une section et plusieurs tables
-	 // cas une table par section (plusieurs sections a faire)
-	 quantif = malloc (nb_tables * sizeof(struct table_quantif));
-	 for (uint8_t i  = 0 ; i < nb_tables; i++) {
-	    printf (" Table %d\n", i);
+	 if (quantif) {
+	    /* Ce n'est pas la premiere section DQT rencontrée,
+	       on alloue un tableau de struct quantif plus grand */
+	    struct table_quantif *temp = malloc ((nb_tables_section + nb_tables) * sizeof(struct table_quantif));
+	    /* Recopie des ancients elements de quantif dans temp */
+	    for (uint8_t i  = 0 ; i < nb_tables; i++) {
+	       temp[i].ind = quantif[i].ind;
+	       for (uint8_t j = 0; j < 64; j++) {
+		  temp[i].val[j] = quantif[i].val[j];
+	       }
+	    }
+	    /* Libération de l'ancien conteneur de tables */
+	    free (quantif);
+	    quantif = temp;
+	 } else {
+	    quantif = malloc (nb_tables_section * sizeof(struct table_quantif));
+	 }
+
+	 for (uint8_t i  = nb_tables ; i < nb_tables + nb_tables_section; i++) {
+	    /* printf (" Table %d\n", i); */
 	    read_nbits(stream, 4, &precision, false);
-	    printf ("  précision: %d\n", precision);
+	    /* printf ("  précision: %d\n", precision); */
 	    read_nbits(stream, 4, & iq, false);
-	    printf ("  indice: %d\n  ", iq);
-	    quantif[i].prec = precision;
+	    /* printf ("  indice: %d\n  ", iq); */
 	    quantif[i].ind = iq ;
 
 	    for (uint8_t j = 0; j < 64; j++) {
-	       if (!(j % 8)) {
-		  printf ("\n  ");
-	       }
+	       /* if (!(j % 8)) { */
+	       /* 	  printf ("\n  "); */
+	       /* } */
 	       read_nbytes(stream, 1, &buf, false);
 	       quantif[i].val[j] = buf;
 	    }
 
-	    printf ("\n");
+	    /* printf ("\n"); */
 	 }
 
-	 break ;
-      case 0xc0:			/* SOF0 */
+	 nb_tables += nb_tables_section;
+      break ;
+   case 0xc0:			/* SOF0 */
 	 printf ("SOF0: \n");
 
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 printf (" longeur section: %d\n", longueur_section);
 	 read_nbytes(stream, 1, &precision, false);
-	 printf (" precision: %d\n", precision);
+	 /* printf (" precision: %d\n", precision); */
 
 	 read_nbytes(stream, 2, &height, false);
 	 printf (" height: %d\n", height);
@@ -416,17 +437,19 @@ int main(int argc, char *argv[]){
 	 for (uint32_t i = 0; i < N; i++)
 	    pred_DC[i] = 0;
 
+	 printf ("UNPACK:  \n");
+
 	 /* Récupération des blocs 8*8 du fichier d'entrée selon l'échantillonnage utilisé */
 	 uint32_t i = 0;
 	 while (i < nb_blocks_scan) {
 	    for (uint8_t c = 0; c < N; c++) {
-	       printf ("N: %d\n", N);
+	       /* printf ("N: %d\n", N); */
 	       index = ic_to_i (composantes, N, ordre_composantes[c]);
-	       printf ("index: %d\n", index);
+	       /* printf ("index: %d\n", index); */
 	       for (uint8_t j = 0;
 		    j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
 		    j++) {
-		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC[index]);
+		  /* printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC[index]); */
 		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC[index],
 			       huff_AC[composantes[index].ih_ac], blocs[i++]);
 		  /* print_block (blocs[i-1], i-1); */
@@ -448,7 +471,7 @@ int main(int argc, char *argv[]){
    }
 
    /* IQZZ */
-
+   printf ("IQZZ: \n");
    int32_t **blocs_iqzz = malloc(nb_blocks_scan*sizeof(int32_t *));
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_iqzz[i] = malloc(64*sizeof(int32_t));
@@ -461,7 +484,7 @@ int main(int argc, char *argv[]){
 	 for (uint8_t j = 0;
 	      j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
 	      j++) {
-	    printf ("iqzz %d | iq = %d\n", i, composantes[index].iq);
+	    /* printf ("iqzz %d | iq = %d\n", i, composantes[index].iq); */
 	    /* Tables de quantif peut être pas rangées par indice */
 	    iqzz_block (blocs[i], blocs_iqzz[i], quantif[composantes[index].iq].val);
 	    /* print_block (blocs_iqzz[i], i); */
@@ -475,14 +498,14 @@ int main(int argc, char *argv[]){
    free (blocs);
 
    /* IDCT */
-
+   printf ("IDCT: \n");
    uint8_t **blocs_idct = malloc(nb_blocks_scan*sizeof(uint8_t *));
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_idct[i] = malloc(64*sizeof(uint8_t));
    }
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
-      printf ("idct %d\n", i);
+      /* printf ("idct %d\n", i); */
       idct_block(blocs_iqzz[i], blocs_idct[i]);
       /* print_block (blocs_idct[i], i); */
    }
@@ -494,6 +517,7 @@ int main(int argc, char *argv[]){
 
    /* UPSAMPLING */
    /* TODO: Gerer indices non fixés */
+   printf ("UPSAMPLING: \n");
    uint8_t ***mcus = malloc(nb_mcus_RGB*sizeof(uint8_t **));
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus[i] = malloc(N*sizeof(uint8_t *));
@@ -506,7 +530,7 @@ int main(int argc, char *argv[]){
    uint32_t l = 0;
    index = 0;
    while (i < nb_blocks_scan) {
-      printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
+      /* printf ("upsampling %d | ic = %d | k = %d \n", i, index, k); */
       /* Rearrangement des blocs pour upsampling */
       uint8_t *up_blocs = rearrange_blocs (blocs_idct, i,
 					   composantes[index].sampling_factor_h,
@@ -546,6 +570,7 @@ int main(int argc, char *argv[]){
    free (blocs_idct);
 
    /* YCbCr to ARGB */
+   printf ("YCbCr2ARGB: \n");
    uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
@@ -553,7 +578,7 @@ int main(int argc, char *argv[]){
 
    k = 0;
    for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
-      printf ("YCbCr2ARGB %d | k = %d \n", i, k);
+      /* printf ("YCbCr2ARGB %d | k = %d \n", i, k); */
       YCbCr_to_ARGB(mcus[i], mcus_RGB[k++],
 		    composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
    }
@@ -565,14 +590,12 @@ int main(int argc, char *argv[]){
    }
    free (mcus);
 
-   printf ("Coucou Cléa ! 😘\n");
-
    /* ecriture dans le TIFF */
-
+   printf ("TIFF: \n");
    struct tiff_file_desc *tfd = init_tiff_file("test.tiff", width, height, 8*composantes[0].sampling_factor_v);
 
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
-      printf ("Write TIFF %d\n", i);
+      /* printf ("Write TIFF %d\n", i); */
       write_tiff_file(tfd, mcus_RGB[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
    }
 

@@ -12,6 +12,17 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+/* MARQUEURS DE SECTIOn */
+#define APP0 0xe0
+#define COM 0xfe
+#define DQT 0xdb
+#define SOF0 0xc0
+#define DHT 0xc4
+#define SOS 0xda
+#define EOI 0xd9
+
+/* STRUCTURES */
+
 struct table_quantif {
    uint8_t val[64] ;
    uint8_t ind ;
@@ -26,113 +37,27 @@ struct unit{
    uint8_t ih_dc; 		/* indice de huffman DC  */
 };
 
-/* struct mcu{ */
-/*    uint32_t ic; */
-/*    uint32_t ih_dc ; */
-/*    uint32_t ih_ac; */
-/* }; */
-
-char *check_and_gen_name(char *input_name)
-{
-   char *pch = strrchr (input_name, '.');
-   uint16_t pos_pt = pch - input_name ;
-   /* Récupération de l'extension seule, max 6 chars pour ".jpeg" */
-   char *ext = malloc (6 * sizeof(char));
-   uint16_t j = 0;
-   for (uint16_t i = pos_pt; (input_name[i] != '\0') && (j < 5); i++) {
-      ext[j++] = input_name[i];
-   }
-   ext[j] = '\0';
-   /* printf ("ext = %s\n", ext); */
-
-   if (strcmp(ext, ".jpeg") && strcmp(ext, ".jpg")) {
-      fprintf(stderr, "erreur: L'extension de fichier n'est ni .jpeg, ni .jpg !\n");
-      exit (1);
-   }
-
-   /* On remplace l'extension .jpeg par .tiff */
-   char *output_name = malloc (sizeof(char) * (strlen(input_name)));
-   strcpy (output_name, input_name);
-   output_name[pos_pt] = '\0';
-   char *tiff_ext = ".tiff";
-   strcat (output_name, tiff_ext);
-   /* printf ("output_name: %s\n", output_name); */
-
-   return output_name;
-}
-
-void print_block (uint8_t *bloc, uint32_t num_bloc)
-{
-   /* printf ("bloc numéro %d\n", num_bloc); */
-   for (uint32_t i = 0; i < 8; i++) {
-      for (uint32_t j = 0; j < 8; j++) {
-	 /* printf ("%d ", bloc[8*i + j]); */
-      }
-      /* printf ("\n "); */
-   }
-   /* printf ("\n"); */
-}
-
-void print_mcu (uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
-{
-   /* printf ("mcu numéro %d\n", num_mcu); */
-   for (uint32_t i = 0; i < 64*sfv*sfh; i++) {
-      /* if (!(i % (sfh * 8))) */
-	 /* printf ("\n"); */
-      /* printf ("%d ", mcu[i]); */
-   }
-   /* printf ("\n"); */
-}
-
-void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
-{
-   uint8_t nbLus = read_bitstream(stream, nb_bits, dest, byte_stuffing);
-   if (nbLus != nb_bits)
-      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
-
-   /* printf ("%#.2x ", *dest); */
-}
-
-void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
-{
-   uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
-   if (nbLus != 8*nb_bytes)
-      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
-
-   /* printf ("%#.2x ", *dest); */
-}
-
-/* Renvoie l'indice correspondant à l'élément d'ic en argument
-   dans le tableau composantes de N élements */
-uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
-{
-   /* if (!composantes) */
-      /* printf ("dégout\n"); */
-
-   for (uint8_t i = 0; i < N; i++)
-      if (composantes[i].ic == ic)
-	 return i;
-
-   fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
-   exit (1);
-}
-
-uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
-{
-   uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
-   /* Pour chaque bloc de la matrice finale */
-   for (uint32_t x = 0; x < sfh*sfv; x++) {
-      for (uint32_t j = 0; j < 64; j++) {
-	    out[64*x + j] = blocs[i + x][j];
-	 }
-   }
-
-   return out;
-}
+/* PROTOTYPES */
+/* Vérifie que le fichier d'entrée à l'extension jpeg ou jpg et génère le nom en .tiff */
+char *check_and_gen_name(const char *input_name);
+/* Crée un bloc de sfh*sfv blocs par concaténation pour upsampling  */
+uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv);
+/* Affiche un bloc 8*8 */
+void print_block(uint8_t *bloc, uint32_t num_bloc);
+/* Affiche une mcu de taille sfh*sfv blocs 8*8 */
+void print_mcu(uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv);
+/* Lit nb_bits bits dans le fichier d'entrée et lève une erreur si impossible */
+void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing);
+/* Lit nb_bytes octets dans le fichier d'entrée et lève une erreur si impossible */
+void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing);
+/* Permet de trouver l'index de composante correspondant à l'indice ic en cas de désordre */
+uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic);
+/* Vérifie qu'une allocation a bien été effectué */
+void check_alloc(void* ptr);
 
 int main(int argc, char *argv[]){
 
-   // vérification de l'entrée
+   /* vérification de l'entrée */
    if ( argc != 2 ) {
       fprintf(stderr, "Veuillez entrer le fichier JPEG à décoder en argument. \n");
       exit (1);
@@ -141,71 +66,70 @@ int main(int argc, char *argv[]){
    /* Vérification de la validité du nom et création du nom du fichier de sortie */
    char *output_name = check_and_gen_name (argv[1]);
 
+   /* Initialisation du bitstream */
    struct bitstream *stream = create_bitstream(argv[1]);
    if (!stream) {
       fprintf(stderr, "Impossible de créer le bitstream. Le fichier spécifié n'existe pas.\n");
       exit (1);
    }
 
-   // EXTRACTION DE L ENTETE
-   uint32_t buf;
-   uint32_t longueur_section ;
-   bool unicite = true ; // vérifie que la déclaration des DQT est correcte
+   /* Variables de table de Huffman */
+   uint8_t compteur_huff_AC = 0 ; /* Nombre de tables AC */
+   uint8_t compteur_huff_DC = 0; /* Nombre de tables DC */
+   struct huff_table *huff_AC[4]; /* Tables AC */
+   struct huff_table *huff_DC[4]; /* Tables DC */
 
-   uint8_t compteur_huff_AC = 0 ; // comptent le nb de tables définies
-   uint8_t compteur_huff_DC = 0;
-   struct huff_table *huff_AC[4];
-   struct huff_table *huff_DC[4];
+   /* Variables de propriétés d'images et d'échantillonnage */
+   uint32_t nb_mcus;		/* Nombre de MCUs YCbCr total */
+   uint32_t nb_mcus_RGB;	/* Nombre de MCUs RGB */
+   uint32_t nb_blocks_scan;	/* Nombre de blocs 8*8 dans l'image jpeg compressée */
+   uint8_t sampling = 0;	/* Facteur d'échantillonnage (Donne la taille des MCUs) */
+   int32_t **blocs ;		    /* Conteneur des blocs 8*8 extraits de l'image JFIF */
+   uint32_t height;		    /* Hauteur de l'image */
+   uint32_t width ;		    /* Largeur de l'image */
+   bool decoded_sos = false;	    /* Indique si on a déjà décodé la section SOS, et donc récupéré les données d'image */
 
-   uint32_t nb_mcus;
-   uint32_t nb_mcus_RGB;
-   uint32_t nb_blocks_scan;
-   uint8_t sampling = 0;
+   /* Variables de quantification */
+   struct table_quantif *quantif = NULL; /* Conteneur de tables d'échantillonnage */
+   uint32_t nb_tables = 0 ;		 /* Nombre de tables */
+   bool unicite = true ; 	/* Vérifie qu'on ne peut avoir plusieures sections DQT de plus d'une table */
 
-   struct table_quantif *quantif = NULL;
-   uint32_t nb_tables = 0 ;
+   /* Variables de composantes */
+   struct unit *composantes = NULL; /* Conteneur d'attributs des composantes YCbCr (ou autres si extension ?) */
+   uint32_t N;			    /* Nombre de composantes */
+   uint8_t *ordre_composantes;	    /* Ordre d'apparition des composantes dans le fichier compressé */
+   uint8_t index;		/* Indice de la composante d'indice ic dans le tableau composantes en cas de désordre */
 
-   struct unit *composantes = NULL;
-   int32_t **blocs ;
+   /* Attributs de section redondants et conteneurs */
+   uint32_t buf;		/* Conteneur brut */
+   uint32_t longueur_section ;	/* Longueur de la section courante */
+   uint32_t ic;			/* Indice d'une composante */
+   uint32_t iq;			/* Indice d'une table de quantification */
+   uint32_t sampling_factor_h;	/* Facteur d'échantillonnage horizontal d'une composante */
+   uint32_t sampling_factor_v;        /* Facteur d'échantillonnage horizontal d'une composante */
+   uint32_t ih_ac;		      /* Indice de table de Huffman ac */
+   uint32_t ih_dc;		      /* Indice de table de Huffman dc */
+   uint32_t precision;		      /* Précision. Inutilisée */
+   uint32_t marqueur;		      /* Marqueur de section JPEG */
 
-   uint32_t precision;
-   uint32_t height;
-   uint32_t width ;
+   /* EXTRACTION DE L ENTETE */
 
-   uint32_t N;
-   uint8_t *ordre_composantes;
-   uint8_t index;
-
-   uint32_t ic;
-   uint32_t iq;
-   uint32_t sampling_factor_h;
-   uint32_t sampling_factor_v;
-
-   uint32_t ih_ac;
-   uint32_t ih_dc;
-
-   /* uint32_t unused; */
-
-   // saut marqueur SOI
+   /* Vérification de présence du marqueur SOI */
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
       fprintf(stderr, "Le fichier ne commence pas par un SOI mais 0x%x !\n", buf);
       exit (1);
    }
 
-   bool decoded_sos = false;
-
+   /* Lecture des sections jusqu'à récupération des blocs */
    while (!decoded_sos) {
 
       // Lecture du premier marqueur de section
-      read_nbytes(stream, 1, &buf, false); /* On passe 0xff */
-      read_nbytes(stream, 1, &buf, false);
-      /* printf ("\n"); */
+      read_nbytes(stream, 1, &buf, false); /* On ignore 0xff */
+      read_nbytes(stream, 1, &marqueur, false); /* Marqueur effectif */
 
-      switch(buf){
-
-	 //APP0 : encapsulation JFIF
-      case 0xe0 :
+      switch(marqueur) {
+      case APP0 :		/* 0xe0 : encapsulation JFIF */
 	 /* printf ("APP0: \n"); */
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 longueur_section = longueur_section;
@@ -223,7 +147,6 @@ int main(int argc, char *argv[]){
 	    exit (1);
 	 }
 
-	 // PASSER A LA FIN DE LA SECTION (SKIP ou READBYTES ?)
 	 /* Lecture des données additionnelles */
 	 uint32_t version;
 	 read_nbytes(stream, 2, &version, false);
@@ -255,7 +178,7 @@ int main(int argc, char *argv[]){
 	 }
 	 break ;
 
-      case 0xFE :			/* COM */
+      case COM :			/* 0xfe */
 	 /* printf ("COM: \n"); */
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 for (uint8_t i =0; i<longueur_section-2 ; i++){
@@ -265,7 +188,7 @@ int main(int argc, char *argv[]){
 	    /* printf("\n") ; */
 	 break ;
 
-      case 0xdb:			/* DQT */
+      case DQT:			/* 0xdb */
 	 /* printf ("DQT: \n"); */
 
 	 if (!unicite){
@@ -273,7 +196,7 @@ int main(int argc, char *argv[]){
 	    exit (1);
 	 }
 
-	 //calcul du nombre de tables de la section
+	 //* calcul du nombre de tables de la section */
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 /* printf (" longeur section: %d\n", longueur_section); */
 	 uint32_t nb_tables_section = (longueur_section-2) / 65;
@@ -287,6 +210,7 @@ int main(int argc, char *argv[]){
 	    /* Ce n'est pas la premiere section DQT rencontrée,
 	       on alloue un tableau de struct quantif plus grand */
 	    struct table_quantif *temp = malloc ((nb_tables_section + nb_tables) * sizeof(struct table_quantif));
+	    check_alloc (temp);
 	    /* Recopie des ancients elements de quantif dans temp */
 	    for (uint8_t i  = 0 ; i < nb_tables; i++) {
 	       temp[i].ind = quantif[i].ind;
@@ -299,6 +223,7 @@ int main(int argc, char *argv[]){
 	    quantif = temp;
 	 } else {
 	    quantif = malloc (nb_tables_section * sizeof(struct table_quantif));
+	    check_alloc (quantif);
 	 }
 
 	 for (uint8_t i  = nb_tables ; i < nb_tables + nb_tables_section; i++) {
@@ -310,19 +235,16 @@ int main(int argc, char *argv[]){
 	    quantif[i].ind = iq ;
 
 	    for (uint8_t j = 0; j < 64; j++) {
-	       /* if (!(j % 8)) { */
-	       /* 	  printf ("\n  "); */
-	       /* } */
 	       read_nbytes(stream, 1, &buf, false);
 	       quantif[i].val[j] = buf;
 	    }
 
-	    /* printf ("\n"); */
 	 }
 
 	 nb_tables += nb_tables_section;
       break ;
-   case 0xc0:			/* SOF0 */
+
+      case SOF0:			/* 0xc0 */
 	 /* printf ("SOF0: \n"); */
 
 	 read_nbytes(stream, 2, &longueur_section, false);
@@ -339,6 +261,7 @@ int main(int argc, char *argv[]){
 	 /* printf (" N: %d\n", N); */
 
 	 composantes = malloc(N*sizeof(struct unit));
+	 check_alloc (composantes);
 
 	 for(uint8_t i = 0; i < N; i++) {
 	    /* printf (" Composante %d\n", i); */
@@ -361,7 +284,7 @@ int main(int argc, char *argv[]){
 	 sampling = composantes[0].sampling_factor_h * composantes[0].sampling_factor_v;
 
 	 break;
-      case 0xc4:			/* DHT */
+      case DHT:			/* 0xc4 */
 	 /* printf ("DHT: \n"); */
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 /* printf (" longeur section: %d\n", longueur_section); */
@@ -402,7 +325,8 @@ int main(int argc, char *argv[]){
 	    /* printf ("nb bytes read: %d\n", nb_byte_read); */
 	 }
 	 break ;
-      case 0xda:			/* SOS */
+
+      case SOS:			/* 0xda */
       {
 	 /* printf ("SOS: \n"); */
 
@@ -413,6 +337,7 @@ int main(int argc, char *argv[]){
 	 /* printf (" N: %d\n", N); */
 
 	 ordre_composantes = malloc (N * sizeof(uint8_t));
+	 check_alloc (composantes);
 
 	 for (uint8_t i = 0; i < N; i++){
 	    read_nbytes(stream, 1, &ic, false);
@@ -450,8 +375,10 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 3, &bits_inutiles, false);
 
 	 blocs = malloc(nb_blocks_scan*sizeof(int32_t *));
+	 check_alloc (blocs);
 	 for (uint32_t i = 0; i < nb_blocks_scan; i++) {
 	    blocs[i] = malloc(64*sizeof(int32_t));
+	    check_alloc (blocs[i]);
 	 }
 
 	 int32_t pred_DC[N];
@@ -482,10 +409,11 @@ int main(int argc, char *argv[]){
 	 decoded_sos = true;
       }
       break ;
-      case 0xd9:		/* EOI */
+
+      case EOI:		/* 0xd9 */
 	 /* printf ("EOI: fin de fichier  \n"); */
 	 return 0;
-	 break;
+
       default :
 	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
 	 exit (1);
@@ -495,8 +423,10 @@ int main(int argc, char *argv[]){
    /* IQZZ */
    /* printf ("IQZZ: \n"); */
    int32_t **blocs_iqzz = malloc(nb_blocks_scan*sizeof(int32_t *));
+   check_alloc (blocs_iqzz);
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_iqzz[i] = malloc(64*sizeof(int32_t));
+      check_alloc (blocs_iqzz[i]);
    }
 
    uint32_t i = 0;
@@ -522,8 +452,10 @@ int main(int argc, char *argv[]){
    /* IDCT */
    /* printf ("IDCT: \n"); */
    uint8_t **blocs_idct = malloc(nb_blocks_scan*sizeof(uint8_t *));
+   check_alloc (blocs_idct);
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_idct[i] = malloc(64*sizeof(uint8_t));
+      check_alloc (blocs_idct[i]);
    }
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
@@ -541,10 +473,14 @@ int main(int argc, char *argv[]){
    /* TODO: Gerer indices non fixés */
    /* printf ("UPSAMPLING: \n"); */
    uint8_t ***mcus = malloc(nb_mcus_RGB*sizeof(uint8_t **));
+   check_alloc (mcus);
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus[i] = malloc(N*sizeof(uint8_t *));
-      for (uint32_t j = 0; j < N; j++)
+      check_alloc (mcus[i]);
+      for (uint32_t j = 0; j < N; j++) {
 	 mcus[i][j] = malloc (64*sampling*sizeof(uint8_t));
+	 check_alloc (mcus[i][j]);
+      }
    }
 
    i = 0;
@@ -594,8 +530,10 @@ int main(int argc, char *argv[]){
    /* YCbCr to ARGB */
    /* printf ("YCbCr2ARGB: \n"); */
    uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
+   check_alloc (mcus_RGB);
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
+      check_alloc (mcus_RGB[i]);
    }
 
    k = 0;
@@ -621,7 +559,9 @@ int main(int argc, char *argv[]){
       write_tiff_file(tfd, mcus_RGB[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
    }
 
+   /* Libération de variables allouées sur le tas */
    close_tiff_file (tfd);
+   free_bitstream(stream);
 
    free (output_name);
 
@@ -634,10 +574,105 @@ int main(int argc, char *argv[]){
    for (uint32_t i = 0; i < compteur_huff_DC; i++)
       free_huffman_table (huff_DC[i]);
 
-   free_bitstream(stream);
    free (composantes);
    free (ordre_composantes);
    free (quantif);
 
    return 0;
+}
+
+
+char *check_and_gen_name(const char *input_name)
+{
+   /* On repere l'extension actuelle */
+   char *ext = strrchr (input_name, '.');
+
+   if (strcmp(ext, ".jpeg") && strcmp(ext, ".jpg")) {
+      fprintf(stderr, "erreur: L'extension de fichier n'est ni .jpeg, ni .jpg !\n");
+      exit (1);
+   }
+
+   /* On remplace l'extension .jp(e)g par .tiff */
+   char *tiff_ext = ".tiff";
+   char *output_name = calloc ((strlen(input_name) - strlen(ext) + strlen(tiff_ext) + 1), sizeof(char));
+   check_alloc (output_name);
+   strncpy (output_name, input_name, strlen(input_name) - strlen(ext));
+   strcat (output_name, tiff_ext);
+   printf ("output_name: %s\n", output_name);
+
+   return output_name;
+}
+
+void print_block(uint8_t *bloc, uint32_t num_bloc)
+{
+   printf ("bloc numéro %d\n", num_bloc);
+   for (uint32_t i = 0; i < 8; i++) {
+      for (uint32_t j = 0; j < 8; j++) {
+	 printf ("%d ", bloc[8*i + j]);
+      }
+      printf ("\n ");
+   }
+   printf ("\n");
+}
+
+void print_mcu(uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
+{
+   printf ("mcu numéro %d\n", num_mcu);
+   for (uint32_t i = 0; i < 64*sfv*sfh; i++) {
+      if (!(i % (sfh * 8)))
+	 printf ("\n");
+      printf ("%d ", mcu[i]);
+   }
+   printf ("\n");
+}
+
+void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
+{
+   uint8_t nbLus = read_bitstream(stream, nb_bits, dest, byte_stuffing);
+   if (nbLus != nb_bits)
+      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
+
+   /* printf ("%#.2x ", *dest); */
+}
+
+void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, bool byte_stuffing)
+{
+   uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
+   if (nbLus != 8*nb_bytes)
+      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
+
+   /* printf ("%#.2x ", *dest); */
+}
+
+/* Renvoie l'indice correspondant à l'élément d'ic en argument
+   dans le tableau composantes de N élements */
+uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
+{
+   for (uint8_t i = 0; i < N; i++)
+      if (composantes[i].ic == ic)
+	 return i;
+
+   fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
+   exit (1);
+}
+
+uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
+{
+   uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
+   check_alloc (out);
+   /* Pour chaque bloc de la matrice finale */
+   for (uint32_t x = 0; x < sfh*sfv; x++) {
+      for (uint32_t j = 0; j < 64; j++) {
+	    out[64*x + j] = blocs[i + x][j];
+	 }
+   }
+
+   return out;
+}
+
+void check_alloc(void* ptr)
+{
+   if (!ptr) {
+      fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+   }
 }

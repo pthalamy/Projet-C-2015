@@ -87,7 +87,7 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
    exit (1);
 }
 
-uint8_t *rearrange_blocs(uint8_t **blocs, uint8_t i, uint8_t sfh, uint8_t sfv)
+uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
 {
    uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
    /* Pour chaque bloc de la matrice finale */
@@ -494,15 +494,17 @@ int main(int argc, char *argv[]){
 
    /* UPSAMPLING */
    /* TODO: Gerer indices non fixés */
-   uint8_t **mcus = malloc(nb_mcus*sizeof(uint8_t *));
-   for (uint32_t i = 0; i < nb_mcus; i++) {
-      mcus[i] = malloc(64*sampling*sizeof(uint8_t));
+   uint8_t ***mcus = malloc(nb_mcus_RGB*sizeof(uint8_t **));
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+      mcus[i] = malloc(N*sizeof(uint8_t *));
+      for (uint32_t j = 0; j < N; j++)
+	 mcus[i][j] = malloc (64*sampling*sizeof(uint8_t));
    }
 
    i = 0;
    uint32_t k = 0;
+   uint32_t l = 0;
    index = 0;
-   /* uint32_t c = ordre_composantes[0]; */
    while (i < nb_blocks_scan) {
       printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
       /* Rearrangement des blocs pour upsampling */
@@ -518,13 +520,8 @@ int main(int argc, char *argv[]){
 
       /* print_mcu (up_blocs, i, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
 
-      if (index == 0) {
-	 upsampler(up_blocs, composantes[0].sampling_factor_h, composantes[0].sampling_factor_v,
-		   mcus[k], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
-      } else {
-	 upsampler(blocs_idct[i], composantes[index].sampling_factor_h, composantes[index].sampling_factor_v,
-		   mcus[k], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
-      }
+      upsampler (up_blocs, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v,
+		mcus[l][index], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
 
       free (up_blocs);
 
@@ -535,7 +532,11 @@ int main(int argc, char *argv[]){
       /* print_mcu (mcus[k], k, composantes[0].sampling_factor_h, composantes[0].sampling_factor_v); */
 
 
-      k++;
+      if (++k == N) {
+	 l++;
+	 k = 0;
+      }
+
       i += composantes[index].sampling_factor_h * composantes[index].sampling_factor_v;
       index = (index + 1) % 3;
    }
@@ -545,27 +546,30 @@ int main(int argc, char *argv[]){
    free (blocs_idct);
 
    /* YCbCr to ARGB */
-
    uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
    }
 
    k = 0;
-   for (uint32_t i = 0; i < nb_mcus_RGB; i += 3) {
+   for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
       printf ("YCbCr2ARGB %d | k = %d \n", i, k);
-      YCbCr_to_ARGB(&mcus[i], mcus_RGB[k++],
+      YCbCr_to_ARGB(mcus[i], mcus_RGB[k++],
 		    composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
    }
 
-   for (uint32_t i = 0; i < nb_mcus; i++)
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+      for (uint32_t j = 0; j < N; j++)
+	 free(mcus[i][j]);
       free (mcus[i]);
+   }
    free (mcus);
+
+   printf ("Coucou Cléa ! 😘\n");
 
    /* ecriture dans le TIFF */
 
-   struct tiff_file_desc *tfd = init_tiff_file("test.tiff", width, height,
-					       8 * composantes[0].sampling_factor_v);
+   struct tiff_file_desc *tfd = init_tiff_file("test.tiff", width, height, 8*composantes[0].sampling_factor_v);
 
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       printf ("Write TIFF %d\n", i);
@@ -573,6 +577,8 @@ int main(int argc, char *argv[]){
    }
 
    close_tiff_file (tfd);
+
+   printf ("Libération de tous les trucs qui puent !\n");
 
    for (uint32_t i = 0; i < nb_mcus_RGB; i++)
       free (mcus_RGB[i]);

@@ -32,7 +32,7 @@ struct unit{
 /*    uint32_t ih_ac; */
 /* }; */
 
-void print_block (int32_t *bloc, uint32_t num_bloc)
+void print_block (uint8_t *bloc, uint32_t num_bloc)
 {
    printf ("bloc numéro %d\n", num_bloc);
    for (uint32_t i = 0; i < 8; i++) {
@@ -40,6 +40,17 @@ void print_block (int32_t *bloc, uint32_t num_bloc)
 	 printf ("%d ", bloc[8*i + j]);
       }
       printf ("\n ");
+   }
+   printf ("\n");
+}
+
+void print_mcu (uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
+{
+   printf ("mcu numéro %d\n", num_mcu);
+   for (uint32_t i = 0; i < 64*sfv*sfh; i++) {
+      if (!(i % (sfh * 8)))
+	 printf ("\n");
+      printf ("%d ", mcu[i]);
    }
    printf ("\n");
 }
@@ -74,6 +85,19 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
 
    fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
    exit (1);
+}
+
+uint8_t *rearrange_blocs(uint8_t **blocs, uint8_t i, uint8_t sfh, uint8_t sfv)
+{
+   uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
+   /* Pour chaque bloc de la matrice finale */
+   for (uint32_t x = 0; x < sfh*sfv; x++) {
+      for (uint32_t j = 0; j < 64; j++) {
+	    out[64*x + j] = blocs[i + x][j];
+	 }
+   }
+
+   return out;
 }
 
 /* void read_huffman(struct bitstream *stream, struct huffman table_AC[], struct huffman table_DC[]) { */
@@ -111,10 +135,10 @@ int main(int argc, char *argv[]){
    struct huff_table *huff_AC[4];
    struct huff_table *huff_DC[4];
 
-   uint32_t nb_blocks_h;
-   uint32_t nb_blocks_v;
+   uint32_t nb_mcus;
+   uint32_t nb_mcus_RGB;
    uint32_t nb_blocks_scan;
-   uint8_t taille_mcu_blocs;
+   uint8_t sampling = 0;
 
    struct table_quantif *quantif = NULL;
    struct unit *composantes = NULL;
@@ -292,6 +316,9 @@ int main(int argc, char *argv[]){
 	    composantes[i].sampling_factor_h = sampling_factor_h;
 	    composantes[i].sampling_factor_v = sampling_factor_v;
 	 }
+
+	 sampling = composantes[0].sampling_factor_h * composantes[0].sampling_factor_v;
+
 	 break;
       case 0xc4:			/* DHT */
 	 printf ("DHT: \n");
@@ -361,13 +388,19 @@ int main(int argc, char *argv[]){
 	 }
 
 	 /* Calcul du nombre blocs 8x8 dans l'image */
-	 nb_blocks_h = (height / 8) + (height % 8 ? 1 : 0);
-	 nb_blocks_v = (width / 8) + (width % 8 ? 1 : 0);
-	 nb_blocks_scan = nb_blocks_h * nb_blocks_v;
+	 uint32_t nb_mcus_h = (height / (8*composantes[0].sampling_factor_v))
+	    + (height % (8*composantes[0].sampling_factor_v) ? 1 : 0);
+	 uint32_t nb_mcus_v = (width / (8*composantes[0].sampling_factor_v))
+	    + (width % (8*composantes[0].sampling_factor_v) ? 1 : 0);
+	 nb_mcus_RGB = nb_mcus_h * nb_mcus_v;
 
-	 /* nb_blocks_scan += 2 *(nb_blocks_scan / (composantes[0].sampling_factor_h*composantes[0].sampling_factor_v)); */
-	 nb_blocks_scan = 1188; /* HARDCODED */
+	 nb_blocks_scan = 0;
+	 for (uint8_t i = 0; i < N; i++)
+	    nb_blocks_scan += nb_mcus_RGB * composantes[i].sampling_factor_h * composantes[i].sampling_factor_v;
 
+	 nb_mcus = nb_mcus_RGB * N;
+	 printf ("nb_mcus_rgb: %d\n", nb_mcus_RGB);
+	 printf ("nb_mcus: %d\n", nb_mcus);
 	 printf ("nb_blocks_scan: %d\n", nb_blocks_scan);
 
 	 uint32_t bits_inutiles;
@@ -395,13 +428,12 @@ int main(int argc, char *argv[]){
 		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC[index]);
 		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC[index],
 			       huff_AC[composantes[index].ih_ac], blocs[i++]);
-		  print_block (blocs[i-1], i-1);
+		  /* print_block (blocs[i-1], i-1); */
 	       }
 	    }
 	 }
 
 	 decoded_sos = true;
-	 exit (1);
       }
       break ;
       case 0xd9:		/* EOI */
@@ -431,11 +463,14 @@ int main(int argc, char *argv[]){
 	    printf ("iqzz %d | iq = %d\n", i, composantes[index].iq);
 	    /* Tables de quantif peut être pas rangées par indice */
 	    iqzz_block (blocs[i], blocs_iqzz[i], quantif[composantes[index].iq].val);
+	    /* print_block (blocs_iqzz[i], i); */
 	    i++;
 	 }
       }
    }
 
+   for (uint32_t i = 0; i < nb_blocks_scan; i++)
+      free (blocs[i]);
    free (blocs);
 
    /* IDCT */
@@ -448,49 +483,71 @@ int main(int argc, char *argv[]){
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       printf ("idct %d\n", i);
       idct_block(blocs_iqzz[i], blocs_idct[i]);
+      /* print_block (blocs_idct[i], i); */
    }
 
-   free (blocs_iqzz);
+   for (uint32_t i = 0; i < nb_blocks_scan; i++)
+      free (blocs_iqzz[i]);
+   free (blocs_iqzz[i]);
+
 
    /* UPSAMPLING */
    /* TODO: Gerer indices non fixés */
-   taille_mcu_blocs  = composantes[0].sampling_factor_h*composantes[0].sampling_factor_v;
-   printf ("taille_mcu_blocs: %d\n", taille_mcu_blocs);
-   uint32_t nb_mcus  = ((nb_blocks_h * nb_blocks_v) / (taille_mcu_blocs)) * N;
-   nb_mcus += 27;		/* HARDCODED */
-   printf ("nb_mcus: %d\n", nb_mcus);
    uint8_t **mcus = malloc(nb_mcus*sizeof(uint8_t *));
    for (uint32_t i = 0; i < nb_mcus; i++) {
-      mcus[i] = malloc(64*taille_mcu_blocs*sizeof(uint8_t));
+      mcus[i] = malloc(64*sampling*sizeof(uint8_t));
    }
 
    i = 0;
    uint32_t k = 0;
-   uint32_t c = ordre_composantes[0];
+   index = 0;
+   /* uint32_t c = ordre_composantes[0]; */
    while (i < nb_blocks_scan) {
-      index = ic_to_i (composantes, N, ordre_composantes[c]);
       printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
+      /* Rearrangement des blocs pour upsampling */
+      uint8_t *up_blocs = rearrange_blocs (blocs_idct, i,
+					   composantes[index].sampling_factor_h,
+					   composantes[index].sampling_factor_v);
+
+      /* for (uint32_t l = 0; */
+      /* 	   l < composantes[index].sampling_factor_h * composantes[index].sampling_factor_v; */
+      /* 	   l++) { */
+      /* 	 print_block (blocs_idct[i+l], i+l); */
+      /* } */
+
+      /* print_mcu (up_blocs, i, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
+
       if (index == 0) {
-	 upsampler(blocs_idct[i], composantes[0].sampling_factor_h, composantes[0].sampling_factor_v,
-		   mcus[k++], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
-	 i += taille_mcu_blocs;
+	 upsampler(up_blocs, composantes[0].sampling_factor_h, composantes[0].sampling_factor_v,
+		   mcus[k], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
       } else {
-	 upsampler(blocs_idct[i], 1, 1,
-		   mcus[k++], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
-	 i++;
+	 upsampler(blocs_idct[i], composantes[index].sampling_factor_h, composantes[index].sampling_factor_v,
+		   mcus[k], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
       }
-      c = (c+1) % 3;
+
+      free  (up_blocs);
+
+      /* printf ("num_blocks_in_h: %d | _v: %d\n", */
+      /* 	      composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
+      /* printf ("num_blocks_out_h: %d | _v: %d\n", */
+      /* 	      composantes[0].sampling_factor_h, composantes[0].sampling_factor_v); */
+      /* print_mcu (mcus[k], k, composantes[0].sampling_factor_h, composantes[0].sampling_factor_v); */
+
+
+      k++;
+      i += composantes[index].sampling_factor_h * composantes[index].sampling_factor_v;
+      index = (index + 1) % 3;
    }
 
-   free (blocs_idct);
+   for (uint32_t i = 0; i < nb_blocks_scan; i++)
+      free (blocs_idct[i]);
+   free (blocs_idct[i]);
 
    /* YCbCr to ARGB */
 
-   uint32_t nb_mcus_RGB  = nb_mcus / N;
-   printf ("nb_mcus_rgb: %d\n", nb_mcus_RGB);
-   uint32_t **mcus_RGB = malloc(nb_mcus*sizeof(uint32_t *));
+   uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
-      mcus_RGB[i] = malloc(64*taille_mcu_blocs*sizeof(uint32_t));
+      mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
    }
 
    k = 0;
@@ -500,6 +557,8 @@ int main(int argc, char *argv[]){
 		    composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
    }
 
+   for (uint32_t i = 0; i < nb_mcus; i++)
+      free (mcus[i]);
    free (mcus);
 
    /* ecriture dans le TIFF */
@@ -513,6 +572,11 @@ int main(int argc, char *argv[]){
    }
 
    close_tiff_file (tfd);
+
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++)
+      free (mcus_RGB[i]);
+   free (mcus_RGB);
+
 
 /*On desalloue le flux de bit */
    free_bitstream(stream);

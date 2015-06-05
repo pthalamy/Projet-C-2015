@@ -32,6 +32,18 @@ struct unit{
 /*    uint32_t ih_ac; */
 /* }; */
 
+void print_block (int32_t *bloc, uint32_t num_bloc)
+{
+   printf ("bloc numéro %d\n", num_bloc);
+   for (uint32_t i = 0; i < 8; i++) {
+      for (uint32_t j = 0; j < 8; j++) {
+	 printf ("%d ", bloc[8*i + j]);
+      }
+      printf ("\n ");
+   }
+   printf ("\n");
+}
+
 void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool byte_stuffing)
 {
    uint8_t nbLus = read_bitstream(stream, nb_bits, dest, byte_stuffing);
@@ -244,7 +256,6 @@ int main(int argc, char *argv[]){
 	    printf ("\n");
 	 }
 
-	 // passer en section suivante : skip ?
 	 break ;
       case 0xc0:			/* SOF0 */
 	 printf ("SOF0: \n");
@@ -353,11 +364,9 @@ int main(int argc, char *argv[]){
 	 nb_blocks_h = (height / 8) + (height % 8 ? 1 : 0);
 	 nb_blocks_v = (width / 8) + (width % 8 ? 1 : 0);
 	 nb_blocks_scan = nb_blocks_h * nb_blocks_v;
-	 /* for  (uint8_t i = 0; i <N; i++) { */
-	 /*    nb_blocks_scan += composantes[i]. */
-	 /* } */
 
-	 nb_blocks_scan += 2 *(nb_blocks_scan / (composantes[0].sampling_factor_h*composantes[0].sampling_factor_v));
+	 /* nb_blocks_scan += 2 *(nb_blocks_scan / (composantes[0].sampling_factor_h*composantes[0].sampling_factor_v)); */
+	 nb_blocks_scan = 1188; /* HARDCODED */
 
 	 printf ("nb_blocks_scan: %d\n", nb_blocks_scan);
 
@@ -369,7 +378,9 @@ int main(int argc, char *argv[]){
 	    blocs[i] = malloc(64*sizeof(int32_t));
 	 }
 
-	 int32_t pred_DC = 0;
+	 int32_t pred_DC[N];
+	 for (uint32_t i = 0; i < N; i++)
+	    pred_DC[i] = 0;
 
 	 /* Récupération des blocs 8*8 du fichier d'entrée selon l'échantillonnage utilisé */
 	 uint32_t i = 0;
@@ -381,14 +392,16 @@ int main(int argc, char *argv[]){
 	       for (uint8_t j = 0;
 		    j < composantes[index].sampling_factor_h*composantes[index].sampling_factor_v;
 		    j++) {
-		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC);
-		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC,
+		  printf ("unpack %d | j = %d | pred_DC = %d\n", i, j, pred_DC[index]);
+		  unpack_block(stream, huff_DC[composantes[index].ih_dc], &pred_DC[index],
 			       huff_AC[composantes[index].ih_ac], blocs[i++]);
+		  print_block (blocs[i-1], i-1);
 	       }
 	    }
 	 }
 
 	 decoded_sos = true;
+	 exit (1);
       }
       break ;
       case 0xd9:		/* EOI */
@@ -444,6 +457,7 @@ int main(int argc, char *argv[]){
    taille_mcu_blocs  = composantes[0].sampling_factor_h*composantes[0].sampling_factor_v;
    printf ("taille_mcu_blocs: %d\n", taille_mcu_blocs);
    uint32_t nb_mcus  = ((nb_blocks_h * nb_blocks_v) / (taille_mcu_blocs)) * N;
+   nb_mcus += 27;		/* HARDCODED */
    printf ("nb_mcus: %d\n", nb_mcus);
    uint8_t **mcus = malloc(nb_mcus*sizeof(uint8_t *));
    for (uint32_t i = 0; i < nb_mcus; i++) {

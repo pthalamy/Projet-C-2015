@@ -124,7 +124,7 @@ void upsampler(uint8_t *in,
       if (nb_blocks_out_h == 2 *nb_blocks_out_v)  /* 2 blocs 8x8 -> 1 bloc 8x16 */
 	 juxtaposition_horizontale(in, out);
       else if (2*nb_blocks_out_h == nb_blocks_out_v) /* 2 blocs 8x8 -> 1 bloc 16x8 */
-	 inout(in, out) ;
+	 inout(in, out) ;			     /* TODO: TESTER MCUS 16*8 */
       else // Si on veut transformer Y0-Y1-Y2-Y3 en un seul bloc (4 blocs 8*8 --> 1 bloc 16*16)
 	 juxtaposition_hv(in, out);
 

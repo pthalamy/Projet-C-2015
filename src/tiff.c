@@ -62,6 +62,13 @@ struct tiff_file_desc
    uint32_t **data; 		/* Tableau de nb strip tableaux de rows_per_strip*width pixels */
 };
 
+void check_alloc_tiff(void* ptr)
+{
+   if (!ptr) {
+      fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+   }
+}
+
 void fput16b(FILE *fp,  uint16_t v)
 {
    fputc((v >> 8), fp);
@@ -189,6 +196,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 				       uint32_t row_per_strip)
 {
    struct tiff_file_desc *tfd = malloc (sizeof(struct tiff_file_desc));
+   check_alloc_tiff (tfd);
    tfd->tiff = fopen(file_name,"w");
 
    /*nombre de colonnes de l'image*/
@@ -219,8 +227,11 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    /* printf ("mcuh: %d | mcuv : %d\n", tfd->mcus_h, tfd->mcus_v); */
 
    tfd->data = malloc (tfd->mcus_h * sizeof(uint32_t*));
-   for (uint32_t i = 0; i < tfd->mcus_h; i++)
+   check_alloc_tiff (tfd->data);
+   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
       tfd->data[i] = malloc (tfd->width*sizeof(uint32_t));
+      check_alloc_tiff (tfd->data[i]);
+   }
    tfd->x = 0;
    tfd->y = 0;
 

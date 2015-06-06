@@ -1,4 +1,5 @@
 #include "iqzz.h"
+
 #include <stdio.h>
 
 int32_t suivant_zigzag(int32_t *i,int32_t *j){

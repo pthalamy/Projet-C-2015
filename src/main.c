@@ -53,7 +53,7 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
 /* Permet de trouver l'index de composante correspondant à l'indice ic en cas de désordre */
 uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic);
 /* Vérifie qu'une allocation a bien été effectué */
-void check_alloc(void* ptr);
+void check_alloc_main(void* ptr);
 
 int main(int argc, char *argv[]){
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]){
 	    /* Ce n'est pas la premiere section DQT rencontrée,
 	       on alloue un tableau de struct quantif plus grand */
 	    struct table_quantif *temp = malloc ((nb_tables_section + nb_tables) * sizeof(struct table_quantif));
-	    check_alloc (temp);
+	    check_alloc_main (temp);
 	    /* Recopie des ancients elements de quantif dans temp */
 	    for (uint8_t i  = 0 ; i < nb_tables; i++) {
 	       temp[i].ind = quantif[i].ind;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]){
 	    quantif = temp;
 	 } else {
 	    quantif = malloc (nb_tables_section * sizeof(struct table_quantif));
-	    check_alloc (quantif);
+	    check_alloc_main (quantif);
 	 }
 
 	 for (uint8_t i  = nb_tables ; i < nb_tables + nb_tables_section; i++) {
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]){
 	 /* printf (" N: %d\n", N); */
 
 	 composantes = malloc(N*sizeof(struct unit));
-	 check_alloc (composantes);
+	 check_alloc_main (composantes);
 
 	 for(uint8_t i = 0; i < N; i++) {
 	    /* printf (" Composante %d\n", i); */
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]){
 	 /* printf (" N: %d\n", N); */
 
 	 ordre_composantes = malloc (N * sizeof(uint8_t));
-	 check_alloc (composantes);
+	 check_alloc_main (composantes);
 
 	 for (uint8_t i = 0; i < N; i++){
 	    read_nbytes(stream, 1, &ic, false);
@@ -375,10 +375,10 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 3, &bits_inutiles, false);
 
 	 blocs = malloc(nb_blocks_scan*sizeof(int32_t *));
-	 check_alloc (blocs);
+	 check_alloc_main (blocs);
 	 for (uint32_t i = 0; i < nb_blocks_scan; i++) {
 	    blocs[i] = malloc(64*sizeof(int32_t));
-	    check_alloc (blocs[i]);
+	    check_alloc_main (blocs[i]);
 	 }
 
 	 int32_t pred_DC[N];
@@ -423,10 +423,10 @@ int main(int argc, char *argv[]){
    /* IQZZ */
    /* printf ("IQZZ: \n"); */
    int32_t **blocs_iqzz = malloc(nb_blocks_scan*sizeof(int32_t *));
-   check_alloc (blocs_iqzz);
+   check_alloc_main (blocs_iqzz);
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_iqzz[i] = malloc(64*sizeof(int32_t));
-      check_alloc (blocs_iqzz[i]);
+      check_alloc_main (blocs_iqzz[i]);
    }
 
    uint32_t i = 0;
@@ -452,10 +452,10 @@ int main(int argc, char *argv[]){
    /* IDCT */
    /* printf ("IDCT: \n"); */
    uint8_t **blocs_idct = malloc(nb_blocks_scan*sizeof(uint8_t *));
-   check_alloc (blocs_idct);
+   check_alloc_main (blocs_idct);
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
       blocs_idct[i] = malloc(64*sizeof(uint8_t));
-      check_alloc (blocs_idct[i]);
+      check_alloc_main (blocs_idct[i]);
    }
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++) {
@@ -473,13 +473,13 @@ int main(int argc, char *argv[]){
    /* TODO: Gerer indices non fixés */
    /* printf ("UPSAMPLING: \n"); */
    uint8_t ***mcus = malloc(nb_mcus_RGB*sizeof(uint8_t **));
-   check_alloc (mcus);
+   check_alloc_main (mcus);
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus[i] = malloc(N*sizeof(uint8_t *));
-      check_alloc (mcus[i]);
+      check_alloc_main (mcus[i]);
       for (uint32_t j = 0; j < N; j++) {
 	 mcus[i][j] = malloc (64*sampling*sizeof(uint8_t));
-	 check_alloc (mcus[i][j]);
+	 check_alloc_main (mcus[i][j]);
       }
    }
 
@@ -530,10 +530,10 @@ int main(int argc, char *argv[]){
    /* YCbCr to ARGB */
    /* printf ("YCbCr2ARGB: \n"); */
    uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
-   check_alloc (mcus_RGB);
+   check_alloc_main (mcus_RGB);
    for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
       mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
-      check_alloc (mcus_RGB[i]);
+      check_alloc_main (mcus_RGB[i]);
    }
 
    k = 0;
@@ -595,10 +595,10 @@ char *check_and_gen_name(const char *input_name)
    /* On remplace l'extension .jp(e)g par .tiff */
    char *tiff_ext = ".tiff";
    char *output_name = calloc ((strlen(input_name) - strlen(ext) + strlen(tiff_ext) + 1), sizeof(char));
-   check_alloc (output_name);
+   check_alloc_main (output_name);
    strncpy (output_name, input_name, strlen(input_name) - strlen(ext));
    strcat (output_name, tiff_ext);
-   printf ("output_name: %s\n", output_name);
+   /* printf ("output_name: %s\n", output_name); */
 
    return output_name;
 }
@@ -659,7 +659,7 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
 uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
 {
    uint8_t *out = malloc (64*sfh*sfv*sizeof(uint8_t));
-   check_alloc (out);
+   check_alloc_main (out);
    /* Pour chaque bloc de la matrice finale */
    for (uint32_t x = 0; x < sfh*sfv; x++) {
       for (uint32_t j = 0; j < 64; j++) {
@@ -670,7 +670,7 @@ uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
    return out;
 }
 
-void check_alloc(void* ptr)
+void check_alloc_main(void* ptr)
 {
    if (!ptr) {
       fprintf (stderr, "alloc error: OUT OF MEMORY\n");

@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void check_alloc_bitstream(void* ptr)
+{
+   if (!ptr) {
+      fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+   }
+}
+
 struct bitstream {
    FILE* fp;			/* FILE Pointer sur fichier à lire */
    uint8_t buf;			/* Reste de la dernier lecture */
@@ -14,6 +21,7 @@ struct bitstream *create_bitstream(const char *filename)
 {
    /* Allocation du bitstream */
    struct bitstream *stream = malloc (sizeof(struct bitstream));
+   check_alloc_bitstream (stream);
    if (!stream) {
       fprintf(stderr, "malloc: OUT OF MEMORY\n");
       return NULL;

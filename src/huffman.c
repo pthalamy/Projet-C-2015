@@ -22,6 +22,12 @@ struct huff_table {
    struct abr *huff_tree;
 };
 
+void check_alloc_huffman(void* ptr)
+{
+   if (!ptr) {
+      fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+   }
+}
 
 void affiche_huffman_rec (struct abr *huff, uint8_t code[16], uint8_t nbits)
 {
@@ -66,6 +72,7 @@ bool insertion(struct abr **abr, uint8_t depth, uint8_t sym)
 	 /* printf ("Création non-feuille: \n"); */
 	 /* Création d'un noeud intermédiaire */
 	 (*abr) = malloc (sizeof(struct abr));
+	 check_alloc_huffman ((*abr));
 	 (*abr)->est_feuille = false;
 	 (*abr)->gauche = NULL;
 	 (*abr)->droite = NULL;
@@ -83,6 +90,7 @@ bool insertion(struct abr **abr, uint8_t depth, uint8_t sym)
       if (!(*abr)) {
 	 /* printf ("Création feuille: 0x%x \t %p\n", sym, abr); */
 	 (*abr) = malloc (sizeof(struct abr));
+	 check_alloc_huffman ((*abr));
 	 (*abr)->est_feuille = true;
 	 (*abr)->sym = sym;
 	 (*abr)->gauche = NULL;
@@ -100,6 +108,7 @@ struct huff_table *load_huffman_table(
    *nb_byte_read = 0;
 
    struct huff_table *ht = malloc (sizeof(struct huff_table));
+   check_alloc_huffman (ht);
    if (!ht) {
       *nb_byte_read = -1;
       return NULL;

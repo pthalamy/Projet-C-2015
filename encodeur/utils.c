@@ -3,11 +3,11 @@
 
 void *smalloc(size_t size)
 {
-    void *v = malloc(size);
-    if (!v) {
-       fprintf(stderr, "out of mem\n");
-       exit(EXIT_FAILURE);
+    void *ptr = malloc (size);
+    if (!ptr) {
+       fprintf (stderr, "error: OUT OF MEMORY\n");
+       exit (EXIT_FAILURE);
     }
 
-    return v;
+    return ptr;
 }

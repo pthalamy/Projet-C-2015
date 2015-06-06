@@ -1,4 +1,4 @@
-#include "downsampling_enc.h"
+#include "downsampler.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -6,6 +6,6 @@
 
 /* Retourne un pointeur sur une zone de mémoire allouée non initialisée de taille size,
  * et leve une erreur d'execution si l'allocation echoue*/
-void *smalloc(size_t size);
+extern void *smalloc(size_t size);
 
 #endif

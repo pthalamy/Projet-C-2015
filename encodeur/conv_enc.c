@@ -7,22 +7,21 @@ enum YCbCr{
    Cr
 };
 
-
-
-uint32_t to_YCbCr(enum YCbCr c, uint32_t R, uint32_t G, uint32_t B){
+uint8_t to_YCbCr(enum YCbCr c, uint32_t R, uint32_t G, uint32_t B)
+{
 
    int32_t res ;
 
    /* Calcul YCbCr correspondant */
    switch(c){
    case Y :
-      res = 0.299*R+0.587*G+0.114*B ;
+      res = 0.299*R + 0.587*G + 0.114*B + 1;
       break;
    case Cb:
-      res = -0.1687*R-0.3313*G+0.5*B+128 ;
+      res = 128 - 0.168736*R - 0.331264*G + 0.5*B ;
       break;
    case Cr:
-      res=0.5*R-0.4187*G+0.0813*B+128 ;
+      res = 128 + 0.5*R - 0.418688*G - 0.081312*B;
       break;
    }
    /*Saturation et conversion en uint8_t*/
@@ -38,7 +37,8 @@ uint32_t to_YCbCr(enum YCbCr c, uint32_t R, uint32_t G, uint32_t B){
    return res_8;
 }
 
-void RGB_to_YCbCr(uint8_t *mcu_YCbCr[3], uint32_t *mcu_RGB, uint32_t nb_blocks_h, uint32_t nb_blocks_v){
+void RGB_to_YCbCr(uint8_t *mcu_YCbCr[3], uint32_t *mcu_RGB, uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+{
 
    uint8_t R;
    uint8_t G;
@@ -48,9 +48,9 @@ void RGB_to_YCbCr(uint8_t *mcu_YCbCr[3], uint32_t *mcu_RGB, uint32_t nb_blocks_h
    for(uint32_t i=0 ; i< nb_pixels; i++){
 
       /*Calcul des composantes R, G et B d'un pixel */
-      R=(mcu_RGB[i]>>16)&0x000F;
-      G=(mcu_RGB[i]>>8)& 0x000F;
-      B=(mcu_RGB[i])&0x000F ;
+      R = (mcu_RGB[i] >> 16) & 0xff;
+      G = (mcu_RGB[i] >> 8) & 0xff;
+      B = (mcu_RGB[i]) & 0xff ;
 
       mcu_YCbCr[0][i]=to_YCbCr(Y, R,G,B);
       mcu_YCbCr[1][i]=to_YCbCr(Cb, R, G,B);

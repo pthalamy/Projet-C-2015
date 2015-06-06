@@ -2,7 +2,7 @@
 
 enum type_quantif{
    L,
-   C,
+   C
 };
 
 

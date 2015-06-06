@@ -1,8 +1,6 @@
-#include "bitstream_enc.h"
-#include <stdint.h>
-#include <stdlib.h>
+#include "pack.h"
 #include <stdio.h>
-
+#include <stdlib.h>
 uint8_t magnitude(int32_t val){
 
    uint8_t mag=1 ;
@@ -49,3 +47,6 @@ void diff_DC(struct bitstream *stream,
    write_bitstream(stream,mag_ind,&ind);
 
 }
+
+
+/*Codage RLE des coefficients AC*/

@@ -38,7 +38,7 @@ int main(int argc, char **argv)
    }
 
    /* Initialisation du lecteur de tiff */
-   struct tiff_file_desc *tfd = create_tfd (argv[1]);
+   struct tiff_file_desc *tfd = create_tfd_and_read_header (argv[1]);
    if (!tfd) {
       fprintf(stderr, "Impossible d'ouvrir le fichier TIFF. Le fichier spécifié n'existe pas.\n");
       exit (1);

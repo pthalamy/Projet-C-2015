@@ -1,5 +1,5 @@
-#ifndef __CONV_ENC_H__
-#define __CONV_ENC_H__
+#ifndef __CONV_H__
+#define __CONV_H__
 
 #include <stdint.h>
 

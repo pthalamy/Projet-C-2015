@@ -1,10 +1,8 @@
 
-#include "bitstream_enc.h"
+#include "bitstream.h"
 #include "utils.h"
 
 #include <stdlib.h>
-
-#include "utils.h"
 
 struct bitstream {
    FILE* fp;			/* FILE Pointer sur fichier à lire */

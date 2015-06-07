@@ -1,5 +1,5 @@
-#ifndef __BITSTREAM_ENC_H__
-#define __BITSTREAM_ENC_H__
+#ifndef __BITSTREAM_H__
+#define __BITSTREAM_H__
 
 #include <stdint.h>
 #include <stdbool.h>

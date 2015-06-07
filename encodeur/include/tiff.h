@@ -3,7 +3,7 @@
 
 struct tiff_file_desc;
 
-extern struct tiff_file_desc *create_tfd (const char *file_name);
+extern struct tiff_file_desc *create_tfd_and_read_header (const char *file_name);
 
 extern void free_tfd (struct tiff_file_desc *tfd);
 

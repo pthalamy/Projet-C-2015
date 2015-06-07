@@ -45,12 +45,14 @@ void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
 
 }
 
-struct tiff_file_desc *create_tfd (const char *file_name)
+struct tiff_file_desc *create_tfd_and_read_header (const char *file_name)
 {
    struct tiff_file_desc *tfd = smalloc (sizeof(struct tiff_file_desc));
    tfd->tiff = fopen(file_name,"rb");
    if (!tfd->tiff)
       return NULL;
+
+   /* HEADER */
 
    /* Lecture de l'endianness */
    fread (&tfd->e_ness, 2, 1, tfd->tiff);
@@ -59,7 +61,21 @@ struct tiff_file_desc *create_tfd (const char *file_name)
    /* Lecture de l'identificateur TIFF */
    uint16_t tiff_id;
    read_nbytes (tfd->tiff, tfd->e_ness, 2, &tiff_id);
-   printf ("id: %d\n", tiff_id);
+   printf ("id: %#x\n", tiff_id);
+   if (tiff_id != 42) {
+      fprintf(stderr, "tiff erreur: Identificateur TIFF différent de 42, le fichier n'est pas valide. \n");
+      exit (EXIT_FAILURE);
+   }
+
+   /* Offset premier IFD */
+   uint16_t ifd_offset;
+   read_nbytes (tfd->tiff, tfd->e_ness, 4, &ifd_offset);
+   printf ("ifd_offset: %#x\n", ifd_offset);
+
+   /* FIN DU HEADER */
+
+   /* Positionnement sur la première IFD */
+   fseek (tfd->tiff, ifd_offset, SEEK_SET);
 
    return tfd;
 }

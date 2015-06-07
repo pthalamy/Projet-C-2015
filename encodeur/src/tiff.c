@@ -74,7 +74,7 @@ void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
 	 *(uint16_t*)dest = be16_to_cpu (*(uint16_t*)dest);
       return;
    case 3:
-            fprintf(stderr, "tiff erreur: 3 octets d'un coup ?\n");
+            fprintf(stderr, "TIFF erreur: 3 octets d'un coup ?\n");
 	    exit (EXIT_FAILURE);
    case 4:
       if (en == LE)
@@ -83,7 +83,7 @@ void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
 	 *(uint32_t*)dest = be32_to_cpu (*(uint32_t*)dest);
       return;
    default:
-      fprintf(stderr, "xtziff erreur: Vous ne pouvez lire plus de 4 octets d'un coup \n");
+      fprintf(stderr, "TIFF erreur: Vous ne pouvez lire plus de 4 octets d'un coup \n");
       exit (EXIT_FAILURE);
    }
 
@@ -96,7 +96,7 @@ void read_value_of_type (FILE *fp, enum endianness en, uint16_t type, uint32_t *
    else if (type == LONG)
       read_nbytes (fp, en, 4, dest);
    else {
-      fprintf(stderr, "tiff erreur: Tentative de lecture d'un type non supporté "
+      fprintf(stderr, "TIFF erreur: Tentative de lecture d'un type non supporté "
 	      "par la fonction read_value_of_type \n");
       exit (EXIT_FAILURE);
    }
@@ -121,10 +121,10 @@ struct tiff_file_desc *create_tfd_and_read_header (const char *file_name)
    /* Initialize attributes to default values */
    tfd->en = 0;
    tfd->image_width = 0;
-   tfd->image_length = 0;;
-   tfd->rows_per_strip = 0;;
-   tfd->sbc_offset = 0;;
-   tfd->so_offset = 0;;
+   tfd->image_length = 0;
+   tfd->rows_per_strip = 0;
+   tfd->sbc_offset = 0;
+   tfd->so_offset = 0;
 
    /* HEADER */
 
@@ -137,7 +137,7 @@ struct tiff_file_desc *create_tfd_and_read_header (const char *file_name)
    read_nbytes (tfd->tiff, tfd->en, 2, &tiff_id);
    printf ("\tid: %#x\n", tiff_id);
    if (tiff_id != 42) {
-      fprintf(stderr, "tiff erreur: Identificateur TIFF différent de 42, le fichier n'est pas valide. \n");
+      fprintf(stderr, "TIFF erreur: Identificateur TIFF différent de 42, le fichier n'est pas valide. \n");
       exit (EXIT_FAILURE);
    }
 
@@ -186,7 +186,7 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
       case COMPRESSION:
 	 printf ("COMPRESSION:\n");
 	 if ((val >> 16) != 1) {
-	    fprintf(stderr, "tiff erreur: Unsupported compression.\n");
+	    fprintf(stderr, "TIFF erreur: Unsupported compression.\n");
 	    exit (EXIT_FAILURE);
 	 }
       	 break;
@@ -201,7 +201,7 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
       case SAMPLE_PER_PIXEL:
 	 printf ("SAMPLE_PER_PIXEL:\n");
 	 if (val != 3) {
-	    fprintf(stderr, "tiff erreur: Unsupported color space.\n");
+	    fprintf(stderr, "TIFF erreur: Unsupported color space.\n");
 	    exit (EXIT_FAILURE);
 	 }
       	 break;
@@ -225,10 +225,17 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
 	 printf ("RESOLUTION_UNIT:\n");
 	 break;
       default:
-	 fprintf(stderr, "tiff erreur: TAG TIFF inconnu: %#x\n", tag);
+	 fprintf(stderr, "TIFF erreur: TAG TIFF inconnu: %#x\n", tag);
 	 break;
       }
 
+   }
+
+   uint32_t offset_to_next_ifd;
+   read_nbytes (tfd->tiff, tfd->en, 4, &offset_to_next_ifd);
+   if (offset_to_next_ifd) {
+      fprintf(stderr, "TIFF erreur: Plus d'une IFD dans le fichier, non supporté.\n");
+      exit (EXIT_FAILURE);
    }
 }
 

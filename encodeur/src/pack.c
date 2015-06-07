@@ -43,12 +43,12 @@ void diff_DC(struct bitstream *stream,
 
    //int32_t code_mag = huffman(mag, table_DC)
    //int32_t nb_bits=magnitude(code_mag) ;
-   //write_bitstream(stream, nb_bits, &code_mag);
+   //write_bitstream(stream, nb_bits, code_mag);
 
    /* Ecriture de l'indice de val dans bitstream*/
    uint32_t ind=(uint32_t)val_to_mag(dc,mag );
    uint8_t mag_ind=magnitude(ind);
-   write_bitstream(stream,mag_ind,&ind);
+   write_bitstream(stream,mag_ind,ind);
 
 }
 

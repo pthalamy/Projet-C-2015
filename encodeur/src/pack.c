@@ -1,6 +1,10 @@
 #include "pack.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+/* MAJ de bitstream.h => Pas besoin de donner un pointeur sur l'entier à écrire
+   en argument de write_bitstream */
+
 uint8_t magnitude(int32_t val){
 
    uint8_t mag=1 ;

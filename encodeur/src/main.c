@@ -37,12 +37,19 @@ int main(int argc, char **argv)
       exit (1);
    }
 
-   /* Initialisation du lecteur de tiff */
+   /* Initialisation du lecteur de TIFF */
    struct tiff_file_desc *tfd = create_tfd_and_read_header (argv[1]);
    if (!tfd) {
       fprintf(stderr, "Impossible d'ouvrir le fichier TIFF. Le fichier spécifié n'existe pas.\n");
       exit (1);
    }
+
+   /* Lecure de l'IFD du fichier TIFF */
+   read_TIFF_ifd (tfd);
+
+   free_tfd (tfd);
+   free_bitstream(stream);
+   free (output_name);
 
    return (EXIT_SUCCESS);
 }

@@ -23,6 +23,7 @@ OBJ_FILES += $(OBJ_DIR)/pack.o
 OBJ_FILES += $(OBJ_DIR)/bitstream.o
 OBJ_FILES += $(OBJ_DIR)/jpeg.o
 OBJ_FILES += $(OBJ_DIR)/utils.o
+OBJ_FILES += $(OBJ_DIR)/tiff.o
 
 all : tiff2jpeg
 

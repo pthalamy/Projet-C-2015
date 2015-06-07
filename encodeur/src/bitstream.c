@@ -17,11 +17,8 @@ struct bitstream *create_bitstream(const char *filename)
 
    /* Ouverture du flux */
    stream->fp = fopen (filename, "wb");
-   if (!stream->fp) {
-      fprintf(stderr, "fopen: filename invalide\n");
-      free (stream);
+   if (!stream->fp)
       return NULL;
-   }
 
    stream->buf = 0;
    stream->buf_len = 0;

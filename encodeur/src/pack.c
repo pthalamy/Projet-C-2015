@@ -22,7 +22,7 @@ uint8_t val_to_mag(int32_t val,uint8_t mag){
       return val ;
    } else {
       return (uint8_t)(0xFFFFFFFF >> (32-mag))&(~ abs(val));
-	 };
+   };
 
 }
 
@@ -54,3 +54,52 @@ void diff_DC(struct bitstream *stream,
 
 
 /*Codage RLE des coefficients AC*/
+// Attention ne marche qu'avec des blocs  8*8
+void RLE_AC(struct bitstream *stream,
+	    int32_t bloc[64]
+	    //   struct huff_table *table_AC
+   ){
+
+   uint8_t i=1 ;
+   uint32_t nb_zeros=0;
+   uint8_t val ;
+   uint8_t mag ;
+   uint8_t der =1;
+
+   while (i<63){
+
+      // si on a un zéro on passe au coeff suivant en incrémentant le compteur
+      if (bloc[i]==0){
+	 nb_zeros++;
+	 i++;
+
+
+      } else {
+	 if (nb_zeros>16){
+	    printf("erreur: format incorrect");
+	 }
+
+	 /*calcul du symbole (nb zeros + mag) */
+	 mag=magnitude(bloc[i]);
+	 val= (nb_zeros <<4)||(0x0F & mag);
+	 //val=huffman(mag, table_AC);
+	 int32_t mag_val=magnitude(val);
+	 write_bitstream(stream, mag_val, val) ;
+
+	 /*calcul indice de bloc[i]*/
+	 val=val_to_mag(bloc[i], mag);
+	 write_bitstream(stream, mag, val);
+
+	 /*maj indices*/
+	 der=i;
+	 i++;
+	 nb_zeros=0;
+
+      }
+
+      if (der !=63){
+	 write_bitstream(stream, 8, 0x00);
+      }
+
+   }
+}

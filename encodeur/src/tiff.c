@@ -251,23 +251,23 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
 void get_tiff_scan_data (struct tiff_file_desc *tfd)
 {
    /* Lecture des longueurs de strip */
-   printf ("\n-- sbc_offsets --\n");
+   /* printf ("\n-- sbc_offsets --\n"); */
    tfd->nbStrips = ((tfd->imageLength + tfd->rowsPerStrip - 1) / tfd->rowsPerStrip);
-   printf ("nb_strips: %d\n", tfd->nbStrips);
+   /* printf ("nb_strips: %d\n", tfd->nbStrips); */
    tfd->stripByteCounts = smalloc (tfd->nbStrips * sizeof(uint32_t));
    fseek (tfd->tiff, tfd->sbcOffset, SEEK_SET);
    for (uint32_t i = 0; i < tfd->nbStrips; i++) {
       read_nbytes (tfd->tiff, tfd->en, 4, &tfd->stripByteCounts[i]);
-      printf ("sbc[%d]: %d\n", i, tfd->stripByteCounts[i]);
+      /* printf ("sbc[%d]: %d\n", i, tfd->stripByteCounts[i]); */
    }
 
    /* Lecture des offset de strip */
-   printf ("\n-- so_offsets --\n");
+   /* printf ("\n-- so_offsets --\n"); */
    tfd->stripOffsets = smalloc (tfd->nbStrips * sizeof(uint32_t));
    fseek (tfd->tiff, tfd->soOffset, SEEK_SET);
    for (uint32_t i = 0; i < tfd->nbStrips; i++) {
       read_nbytes (tfd->tiff, tfd->en, 4, &tfd->stripOffsets[i]);
-      printf ("so[%d]: %#x\n", i, tfd->stripOffsets[i]);
+      /* printf ("so[%d]: %#x\n", i, tfd->stripOffsets[i]); */
    }
 
    /* Stockage des strips dans un tableau de pixel représentant le scan  */
@@ -285,7 +285,12 @@ void get_tiff_scan_data (struct tiff_file_desc *tfd)
    for (uint32_t i = 0; i < tfd->nbStrips; i++) {
       fseek (tfd->tiff, tfd->stripOffsets[i], SEEK_SET);
       for (uint32_t j = 0; j < tfd->stripByteCounts[i]; j  += 3) {
-	 if (pix_x >= tfd->scanWidth) {
+	 if (pix_x >= tfd->imageWidth) {
+	    /* Remplissage avec la valeur de pixels de bordure */
+	    while (pix_x < tfd->scanWidth) {
+	       tfd->imageScan[pix_y][pix_x] = tfd->imageScan[pix_y][pix_x-1];
+	       pix_x++;
+	    }
 	    pix_y++;
 	    pix_x = 0;
 	 }
@@ -293,6 +298,22 @@ void get_tiff_scan_data (struct tiff_file_desc *tfd)
    	 read_nbytes (tfd->tiff, tfd->en, 3, &tfd->imageScan[pix_y][pix_x++]);
 	 /* printf ("scan[%d][%d] = %#x\n", pix_y, pix_x - 1, tfd->imageScan[pix_y][pix_x-1]); */
       }
+   }
+
+   /* Ajout du padding vertical si nécessaire */
+   while (pix_y < tfd->scanHeight) {
+      	 if (pix_x >= tfd->scanWidth) {
+	    pix_y++;
+
+	    if (pix_y >= tfd->scanHeight)
+	       break;
+
+	    pix_x = 0;
+	 }
+
+	 tfd->imageScan[pix_y][pix_x] = tfd->imageScan[pix_y-1][pix_x];
+	 /* printf ("scan[%d][%d] = %#x\n", pix_y, pix_x, tfd->imageScan[pix_y-1][pix_x]); */
+	 pix_x++;
    }
 
    printf ("\npix_x = %d pix_y = %d\n", pix_x, pix_y);
@@ -319,21 +340,16 @@ uint32_t **split_scan_into_blocks(struct tiff_file_desc *tfd, uint32_t *nbBlocks
    for (uint32_t i = 0; i < *nbBlocksV; i++) {
       for (uint32_t j = 0; j < *nbBlocksH; j++) {
 
-	 for (uint32_t k = 0; k < 8; k++) {
-	    for (uint32_t l = 0; l < 8; l++) {
-	       bloc_id = *nbBlocksH * i + j;
-	       pix = 8*k + l;
-	       src_pix_x = 8 * j + l;
-	       src_pix_y = 8 * *nbBlocksH * i + k;
-	       if (src_pix_x < tfd->imageWidth && src_pix_y < tfd->imageLength) {
-	 	  printf ("blocks[%d][%d] = scan[%d + %d = %d]\n", bloc_id, pix, src_pix_x, src_pix_y, src_pix_x + 8 * src_pix_y);
-	 	  blocks[bloc_id][pix] = tfd->imageScan[src_pix_x + 8 * src_pix_y];
-	       } else {
-	 	  printf ("blocks[%d][%d] = 0\n", bloc_id, pix);
-	 	  blocks[bloc_id][pix] = 0;
-	       }
-	    }
-	 }
+   	 for (uint32_t k = 0; k < 8; k++) {
+   	    for (uint32_t l = 0; l < 8; l++) {
+   	       bloc_id = *nbBlocksH * i + j;
+   	       pix = 8*k + l;
+   	       src_pix_x = 8 * j + l;
+   	       src_pix_y = 8 * i + k;
+	       /* printf ("blocks[%d][%d] = scan[%d][%d]\n", bloc_id, pix, src_pix_y, src_pix_x); */
+	       blocks[bloc_id][pix] = tfd->imageScan[src_pix_y][src_pix_x];
+   	    }
+   	 }
 
       }
    }

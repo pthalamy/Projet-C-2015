@@ -49,17 +49,17 @@ int main(int argc, char **argv)
 
    /* Lecture des données des l'image et découpage en blocs 8*8 */
    get_tiff_scan_data (tfd);
-   /* uint32_t nbBlocksH, nbBlocksV; */
-   /* uint32_t **blocks = split_scan_into_blocks(tfd, &nbBlocksH, &nbBlocksV); */
-   /* uint32_t nbBlocks = nbBlocksV * nbBlocksH; */
+   uint32_t nbBlocksH, nbBlocksV;
+   uint32_t **blocks = split_scan_into_blocks(tfd, &nbBlocksH, &nbBlocksV);
+   uint32_t nbBlocks = nbBlocksV * nbBlocksH;
 
    /* for (uint32_t i = 0; i < nbBlocks; i++) { */
-   /*    /\* print_block(blocks[i], i); *\/ */
+   /*    print_block(blocks[i], i); */
    /* } */
 
-   /* for (uint32_t i = 0; i < nbBlocks; i++) */
-   /*    free (blocks[i]); */
-   /* free (blocks); */
+   for (uint32_t i = 0; i < nbBlocks; i++)
+      free (blocks[i]);
+   free (blocks);
    free_tfd (tfd);
    free_bitstream(stream);
    free (output_name);

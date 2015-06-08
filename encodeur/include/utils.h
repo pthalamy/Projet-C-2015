@@ -20,4 +20,6 @@ uint32_t le32_to_cpu(const uint32_t v);
 uint16_t be16_to_cpu(const uint16_t v);
 uint32_t be32_to_cpu(const uint32_t v);
 
+void print_block(uint8_t *bloc, uint32_t num_bloc);
+
 #endif

@@ -1,12 +1,10 @@
 #include "pack.h"
 #include "huffman.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-struct elt {
-   uint8_t symbole ;
-   uint8_t occ ;
 
-};
+
 
 /*Recherche un symbole dans un tableau tab[256] */
 /*renvoie -1 si l'element n'y est pas, i si tab[i].symbole =symb  */
@@ -33,7 +31,10 @@ int32_t recherche_tab(struct elt tab[256], uint8_t symb ){
 
 
 /*Parcours d'un bloc et stockage des symboles et de leurs ocurrences dans un tableau AC et un tableau DC */
-void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256], int32_t  *pred_DC, uint8_t ind_DC, uint8_t ind_AC){
+void init_freq(int32_t bloc[64],
+	       struct elt freq_DC[256], uint8_t ind_DC,
+	       struct elt freq_AC[256], uint8_t ind_AC,
+	       int32_t  *pred_DC){
 
 /* Maj de freq_DC */
 
@@ -96,6 +97,9 @@ void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256
    }
 }
 
+
+/////////////////////////////////////////////////////////////////
+////////    FONCTIONS SUR LES TAS /////////////
 
 /*Echange deux éléments d'un tas*/
 void swap_heap(struct elt *a, struct elt *b){
@@ -184,6 +188,7 @@ void delete_elt(struct elt *heap, uint8_t ind){
 }
 
 /*Transformation du tableau en file de priorité */
+
 struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
 
   /* Création d'un tas de bonne taille */
@@ -200,8 +205,12 @@ struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
    }
 
    /*Allocation du tas */
-   struct elt *heap=malloc(*nb_elt*sizeof(struct elt));
-   //smalloc();
+   struct elt *heap=smalloc(*nb_elt*sizeof(struct elt));
+
+   /* Remplissage du tas */
+   for (uint8_t j=0; j<*nb_elt; j++){
+      insert_heap(tab[j], heap, j, *nb_elt) ;
+   }
 
 
    return heap ;
@@ -214,18 +223,37 @@ void free_heap( struct elt *heap){
 }
 
 
-
-
+////////////////////////////////////////////////////////////////////
+///////////   FONCTIONS SUR LES ARBRES DE HUFFMAN /////////
 
 
 struct huff_table {
-
+   struct abr *huff_tree ;
 };
 
-/* extern struct huff_table create_huffman_table(...)
-   {
 
-   } */
+struct abr {
+   uint8_t symbole ;
+   bool est_feuille ;
+   struct abr *gauche, *droite ;
+};
+
+
+ struct huff_table create_huffman_table(struct elt tab[256])
+   {
+      uint8_t nb_elt;
+      /*Transformation du tableau en tas */
+      struct elt *heap=tab_to_heap( tab[256],  &nb_elt);
+
+      /*Création de l'arbre */
+
+      /*Fusion des deux meilleurs noeuds en un arbre*/
+
+
+
+      /*Désallocation*/
+      free_heap(heap);
+   }
 
 void store_huffman_table(struct bitstream *stream, struct huff_table *ht)
 {

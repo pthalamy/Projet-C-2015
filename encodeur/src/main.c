@@ -47,6 +47,9 @@ int main(int argc, char **argv)
    /* Lecure de l'IFD du fichier TIFF */
    read_TIFF_ifd (tfd);
 
+   /* Lecture des données des l'image */
+   get_tiff_scan_data (tfd);
+
    free_tfd (tfd);
    free_bitstream(stream);
    free (output_name);

@@ -3,7 +3,6 @@
 #include "utils.h"
 
 #include <stdio.h>
-#include <stdint.h>
 
 /* TYPES DE DONNEES */
 #define SHORT							 0x0003
@@ -11,14 +10,14 @@
 #define RATIONNAL 	 					 0x0005
 
 /* TAGS */
-#define IMAGE_WIDTH 	 				 0x0100
-#define IMAGE_LENGTH 	 				 0x0101
+#define IMAGEWIDTH 	 				 0x0100
+#define IMAGELENGTH 	 				 0x0101
 #define BITS_PER_SAMPLE 	 			 0x0102
 #define COMPRESSION  	 			         0x0103
 #define PHOTOMETRIC_INTERPRETATION       0x0106
 #define STRIP_OFFSET  	 			         0x0111
 #define SAMPLE_PER_PIXEL  	 			 0x0115
-#define ROWS_PER_STRIP  	 			 0x0116
+#define ROWSPERSTRIP  	 			 0x0116
 #define STRIP_BYTE_COUNTS  	 		         0x0117
 #define X_RESOLUTION  	 			         0x011a
 #define Y_RESOLUTION  	 			         0x011b
@@ -52,11 +51,15 @@ enum endianness {
 struct tiff_file_desc {
    enum endianness en;
    FILE *tiff;
-   uint32_t image_width;
-   uint32_t image_length;
-   uint32_t rows_per_strip;
-   uint32_t sbc_offset;
-   uint32_t so_offset;
+   uint32_t imageWidth;
+   uint32_t imageLength;
+   uint32_t rowsPerStrip;
+   uint32_t sbcOffset;
+   uint32_t soOffset;
+   uint32_t *imageScan;
+   uint32_t nbStrips;
+   uint32_t *stripByteCounts;
+   uint32_t *stripOffsets;
 };
 
 void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
@@ -74,8 +77,6 @@ void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
 	 *(uint16_t*)dest = be16_to_cpu (*(uint16_t*)dest);
       return;
    case 3:
-            fprintf(stderr, "TIFF erreur: 3 octets d'un coup ?\n");
-	    exit (EXIT_FAILURE);
    case 4:
       if (en == LE)
 	 *(uint32_t*)dest = le32_to_cpu (*(uint32_t*)dest);
@@ -120,11 +121,11 @@ struct tiff_file_desc *create_tfd_and_read_header (const char *file_name)
 
    /* Initialize attributes to default values */
    tfd->en = 0;
-   tfd->image_width = 0;
-   tfd->image_length = 0;
-   tfd->rows_per_strip = 0;
-   tfd->sbc_offset = 0;
-   tfd->so_offset = 0;
+   tfd->imageWidth = 0;
+   tfd->imageLength = 0;
+   tfd->rowsPerStrip = 0;
+   tfd->sbcOffset = 0;
+   tfd->soOffset = 0;
 
    /* HEADER */
 
@@ -170,15 +171,15 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
       read_ifd_entry (tfd->tiff, tfd->en, &tag, &type, &nb_val, &val);
 
       switch (tag) {
-      case IMAGE_WIDTH:
-	 printf ("IMAGE_WIDTH:\n");
-	 tfd->image_width = val;
-	 printf ("\timage_width: %#x <=> %d\n", tfd->image_width, tfd->image_width);
+      case IMAGEWIDTH:
+	 printf ("IMAGEWIDTH:\n");
+	 tfd->imageWidth = val;
+	 printf ("\timageWidth: %#x <=> %d\n", tfd->imageWidth, tfd->imageWidth);
 	 break;
-      case IMAGE_LENGTH:
-	 printf ("IMAGE_LENGTH:\n");
-	 tfd->image_length = val;
-	 printf ("\timage_length: %#x <=> %d\n", tfd->image_length, tfd->image_length);
+      case IMAGELENGTH:
+	 printf ("IMAGELENGTH:\n");
+	 tfd->imageLength = val;
+	 printf ("\timageLength: %#x <=> %d\n", tfd->imageLength, tfd->imageLength);
 	 break;
       case BITS_PER_SAMPLE:
 	 printf ("BITS_PER_SAMPLE:\n");
@@ -195,8 +196,8 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
       	 break;
       case STRIP_OFFSET:
 	 printf ("STRIP_OFFSET:\n");
-	 tfd->so_offset = val;
-	 printf ("\tso_offset: %#x\n", tfd->so_offset);
+	 tfd->soOffset = val;
+	 printf ("\tsoOffset: %#x\n", tfd->soOffset);
 	 break;
       case SAMPLE_PER_PIXEL:
 	 printf ("SAMPLE_PER_PIXEL:\n");
@@ -205,15 +206,15 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
 	    exit (EXIT_FAILURE);
 	 }
       	 break;
-      case ROWS_PER_STRIP:
-	 printf ("ROWS_PER_STRIP:\n");
-	 tfd->rows_per_strip = val;
-	 printf ("\trows_per_strip: %#x <=> %d\n", tfd->rows_per_strip, tfd->rows_per_strip);
+      case ROWSPERSTRIP:
+	 printf ("ROWSPERSTRIP:\n");
+	 tfd->rowsPerStrip = val;
+	 printf ("\trowsPerStrip: %#x <=> %d\n", tfd->rowsPerStrip, tfd->rowsPerStrip);
 	 break;
       case STRIP_BYTE_COUNTS:
 	 printf ("STRIP_BYTE_COUNTS:\n");
-	 tfd->sbc_offset = val;
-	 printf ("\tsbc_offset: %#x\n", tfd->sbc_offset);
+	 tfd->sbcOffset = val;
+	 printf ("\tsbcOffset: %#x\n", tfd->sbcOffset);
 	 break;
       case X_RESOLUTION:
 	 printf ("X_RESOLUTION:\n");
@@ -231,6 +232,7 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
 
    }
 
+   /* Vérification de l'unicité de l'ifd */
    uint32_t offset_to_next_ifd;
    read_nbytes (tfd->tiff, tfd->en, 4, &offset_to_next_ifd);
    if (offset_to_next_ifd) {
@@ -239,10 +241,59 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
    }
 }
 
+void get_tiff_scan_data (struct tiff_file_desc *tfd)
+{
+   /* Lecture des longueurs de strip */
+   printf ("\n-- sbc_offsets --\n");
+   tfd->nbStrips = ((tfd->imageLength + tfd->rowsPerStrip - 1) / tfd->rowsPerStrip);
+   printf ("nb_strips: %d\n", tfd->nbStrips);
+   tfd->stripByteCounts = smalloc (tfd->nbStrips * sizeof(uint32_t));
+   fseek (tfd->tiff, tfd->sbcOffset, SEEK_SET);
+   for (uint32_t i = 0; i < tfd->nbStrips; i++) {
+      read_nbytes (tfd->tiff, tfd->en, 4, &tfd->stripByteCounts[i]);
+      printf ("sbc[%d]: %d\n", i, tfd->stripByteCounts[i]);
+   }
+
+   /* Lecture des offset de strip */
+   printf ("\n-- so_offsets --\n");
+   tfd->stripOffsets = smalloc (tfd->nbStrips * sizeof(uint32_t));
+   fseek (tfd->tiff, tfd->soOffset, SEEK_SET);
+   for (uint32_t i = 0; i < tfd->nbStrips; i++) {
+      read_nbytes (tfd->tiff, tfd->en, 4, &tfd->stripOffsets[i]);
+      printf ("so[%d]: %#x\n", i, tfd->stripOffsets[i]);
+   }
+
+   /* Stockage des strips dans un tableau de pixel représentant le scan  */
+   tfd->imageScan = smalloc (tfd->imageLength * tfd->imageWidth * sizeof(uint32_t));
+   /* for (uint32_t i = 0; i < tfd->imageLength; i++) */
+   /*    tfd->imageScan[i] = smalloc (tfd->imageWidth * sizeof(uint32_t)); */
+
+   uint32_t pix = 0;		/* Indice du pixel courant dans le scan */
+
+   for (uint32_t i = 0; i < tfd->nbStrips; i++) {
+      fseek (tfd->tiff, tfd->stripOffsets[i], SEEK_SET);
+      for (uint32_t j = 0; j < tfd->stripByteCounts[i] / 3; j++) {
+	 if (pix >= tfd->imageLength * tfd->imageWidth)
+	    continue;
+   	 read_nbytes (tfd->tiff, tfd->en, 3, &tfd->imageScan[pix++]);
+      }
+   }
+
+   printf ("\npix %d at offset %#lx, with %d pixels in image\n", pix, ftell (tfd->tiff), tfd->imageLength * tfd->imageWidth);
+}
+
+uint32_t **split_scan_into_blocks (struct tiff_file_desc *tfd)
+{
+   return NULL;
+}
+
 void free_tfd (struct tiff_file_desc *tfd)
 {
    if (tfd) {
       fclose (tfd->tiff);
+      free (tfd->imageScan);
+      free (tfd->stripOffsets);
+      free (tfd->stripByteCounts);
       free (tfd);
       tfd = NULL;
    }

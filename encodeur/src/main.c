@@ -50,27 +50,23 @@ int main(int argc, char **argv)
    /* Lecure de l'IFD du fichier TIFF */
    read_TIFF_ifd (tfd);
 
-   /* Lecture des données des l'image et découpage en blocs 8*8 */
+   /* Lecture des données des l'image et découpage en MCU 16x16 */
    get_tiff_scan_data (tfd);
-   uint32_t nbBlocsH, nbBlocsV;
-   uint32_t **blocs_scan = split_scan_into_blocks(tfd, &nbBlocsH, &nbBlocsV);
-   uint32_t nbBlocs = nbBlocsV * nbBlocsH;
+   uint32_t nbMCUH, nbMCUV;
+   uint32_t **MCUScan = split_scan_into_16x16_MCU(tfd, &nbMCUH, &nbMCUV);
+   uint32_t nbMCU = nbMCUV * nbMCUH;
 
+   /* DOWNSAMPLING 4:2:0 */
+   /* uint32_t **blocs = smalloc (nbBlocs * 1 +   ); */
+   /* printf ("\DOWNSAMPLING 4:2:0\n"); */
    /* for (uint32_t i = 0; i < nbBlocs; i++) { */
-   /*    print_block(blocs[i], i); */
+   /*    uint32_t blocs = smalloc (nbBlocs * ); */
    /* } */
 
-   /* DOWNSAMPLING */
-   printf ("\DOWNSAMPLING 4:2:0\n");
-   uint32_t **blocs;
-   for (uint32_t i = 0; i < nbBlocs; i++) {
-      print_block(blocs[i], i);
-   }
 
-
-   for (uint32_t i = 0; i < nbBlocs; i++)
-      free (blocs[i]);
-   free (blocs);
+   for (uint32_t i = 0; i < nbMCU; i++)
+      free (MCUScan[i]);
+   free (MCUScan);
    free_tfd (tfd);
    free_bitstream(stream);
    free (output_name);

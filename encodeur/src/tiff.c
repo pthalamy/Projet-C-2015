@@ -321,40 +321,40 @@ void get_tiff_scan_data (struct tiff_file_desc *tfd)
    /* 	   ftell (tfd->tiff), tfd->imageLength * tfd->imageWidth); */
 }
 
-uint32_t **split_scan_into_blocks(struct tiff_file_desc *tfd, uint32_t *nbBlocsH, uint32_t *nbBlocsV)
+uint32_t **split_scan_into_16x16_MCU(struct tiff_file_desc *tfd, uint32_t *nbMCUH, uint32_t *nbMCUV)
 {
-   *nbBlocsH = (tfd->imageWidth + 7) / 8;
-   *nbBlocsV = (tfd->imageLength + 7) / 8;
-   uint32_t nbBlocs = *nbBlocsH * *nbBlocsV;
-   /* printf ("nbBlocsH: %d | nbBlocsV: %d => nbBlocs: %d\n", *nbBlocsH, *nbBlocsV, nbBlocs); */
+   *nbMCUH = (tfd->imageWidth + 15) / 16;
+   *nbMCUV = (tfd->imageLength + 15) / 16;
+   uint32_t nbMCU = *nbMCUH * *nbMCUV;
+   printf ("nbMCUH: %d | nbMCUV: %d => nbMCU: %d\n", *nbMCUH, *nbMCUV, nbMCU);
 
-   uint32_t **blocs = smalloc (nbBlocs * sizeof (uint32_t *));
-   for (uint32_t i = 0; i < nbBlocs; i++)
-      blocs[i] = smalloc (64 * sizeof (uint32_t));
+   uint32_t **mcus = smalloc (nbMCU * sizeof (uint32_t *));
+   for (uint32_t i = 0; i < nbMCU; i++)
+      mcus[i] = smalloc (256 * sizeof (uint32_t));
 
-   uint32_t bloc_id = 0;
+   uint32_t mcu_id = 0;
    uint32_t pix = 0;
    uint32_t src_pix_x = 0;
    uint32_t src_pix_y = 0;
 
-   for (uint32_t i = 0; i < *nbBlocsV; i++) {
-      for (uint32_t j = 0; j < *nbBlocsH; j++) {
+   for (uint32_t i = 0; i < *nbMCUV; i++) {
+      for (uint32_t j = 0; j < *nbMCUH; j++) {
 
-   	 for (uint32_t k = 0; k < 8; k++) {
-   	    for (uint32_t l = 0; l < 8; l++) {
-   	       bloc_id = *nbBlocsH * i + j;
-   	       pix = 8*k + l;
-   	       src_pix_x = 8 * j + l;
-   	       src_pix_y = 8 * i + k;
-	       /* printf ("blocs[%d][%d] = scan[%d][%d]\n", bloc_id, pix, src_pix_y, src_pix_x); */
-	       blocs[bloc_id][pix] = tfd->imageScan[src_pix_y][src_pix_x];
+   	 for (uint32_t k = 0; k < 16; k++) {
+   	    for (uint32_t l = 0; l < 16; l++) {
+   	       mcu_id = *nbMCUH * i + j;
+   	       pix = 16*k + l;
+   	       src_pix_x = 16 * j + l;
+   	       src_pix_y = 16 * i + k;
+	       /* printf ("MCU[%d][%d] = scan[%d][%d]\n", mcu_id, pix, src_pix_y, src_pix_x); */
+	       mcus[mcu_id][pix] = tfd->imageScan[src_pix_y][src_pix_x];
    	    }
    	 }
 
       }
    }
 
-   return blocs;
+   return mcus;
 }
 
 void free_tfd (struct tiff_file_desc *tfd)

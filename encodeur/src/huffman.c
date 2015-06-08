@@ -1,6 +1,7 @@
 #include "pack.h"
 #include "huffman.h"
 #include <stdio.h>
+#include <stdlib.h>
 struct elt {
    uint8_t symbole ;
    uint8_t occ ;
@@ -31,8 +32,7 @@ int32_t recherche_tab(struct elt tab[256], uint8_t symb ){
 
 
 
-/*Parcours d'un bloc et stockage des symboles et de leurs ocurrences dans un tableau*/
-
+/*Parcours d'un bloc et stockage des symboles et de leurs ocurrences dans un tableau AC et un tableau DC */
 void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256], int32_t  *pred_DC, uint8_t ind_DC, uint8_t ind_AC){
 
 /* Maj de freq_DC */
@@ -97,15 +97,121 @@ void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256
 }
 
 
+/*Echange deux éléments d'un tas*/
+void swap_heap(struct elt *a, struct elt *b){
+   struct elt *temp=malloc (sizeof(struct elt));
+   temp->occ= a->occ;
+   temp->symbole=a->symbole ;
+   a->occ=b->occ ;
+   a->symbole=b->symbole ;
+   b->occ=temp->occ;
+   b->symbole=temp->symbole ;
+
+   free(temp);
+}
+
+/*Insertion d'un élément dans le tas */
+void insert_heap(struct elt x, struct elt *heap,
+		 uint8_t ind, uint8_t taille_heap){
+
+   uint8_t i =ind ;
+   if (ind >taille_heap){
+      printf("tas plein !");
+   };
+
+   /*insertion à la fin du tas*/
+   heap[ind].symbole=x.symbole ;
+   heap[ind].occ= x.occ ;
+   ind++;// ind est l'indice de la 1e case vide du tas
+
+   /*tant que le champ occ du père est supérieur à celui de x on les échange */
+   while (i>0){
+      if (heap[i].occ < heap[i/2].occ){
+	 swap_heap(&heap[i], &heap[i/2]);
+	 i=i/2 ;
+      }
+   }
+}
 
 
 
 
 
 
+/*Recupère l'élément de plus faible occurrence*/
+struct elt best_elt(struct elt *heap, uint8_t ind){
+
+   if (ind==0){
+      printf("tas vide \n");
+   };
+
+   return heap[0];
 
 
+}
 
+/*Supprime l'élément de plus faible occurrence */
+void delete_elt(struct elt *heap, uint8_t ind){
+
+   if (ind==0){
+      printf("Tas vide :impossible de supprimer un élément ");
+   };
+
+   /* Derniere feuille passe en racine */
+   swap_heap(&heap[0], &heap[ind-1]) ;
+   heap[ind-1].occ=0 ;
+   ind--;
+
+   /*Tant qu'on n'est pas sur une feuille */
+   /* si un des fils a une occurrence plus faible que le pere, on les echange */
+
+   uint8_t i=0 ;
+   uint8_t min ;
+   /* Calcul du fils avec la plus faible occurrence */
+   while (i<(ind-1)/2){
+      if (heap[2*i].occ > heap[2*i+1].occ){
+	 min=2*i+1;
+      } else {
+	 min=2*i ;
+      }
+
+      if (heap[i].occ>heap[min].occ){
+	 swap_heap(&heap[i], &heap[min]);
+	 i=min;
+      }
+   }
+
+}
+
+/*Transformation du tableau en file de priorité */
+struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
+
+  /* Création d'un tas de bonne taille */
+  int32_t i =0 ;
+   bool fin_tab=false ;
+   while ((! fin_tab)& (i<256)) {
+      if (tab[i].occ==0){
+	 fin_tab=true;
+      } else {
+	 i++;
+      }
+
+      *nb_elt=i+1;
+   }
+
+   /*Allocation du tas */
+   struct elt *heap=malloc(*nb_elt*sizeof(struct elt));
+   //smalloc();
+
+
+   return heap ;
+}
+
+
+/*Libération d'un tas*/
+void free_heap( struct elt *heap){
+   free(heap);
+}
 
 
 

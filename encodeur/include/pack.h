@@ -8,4 +8,10 @@
 extern void diff_DC(struct bitstream *stream, int32_t  *pred_DC
 		    /* ,struct huff_table *table_DC*/, int32_t bloc[64] );
 
+
+extern void RLE_AC(struct bitstream *stream,
+	    int32_t bloc[64]
+	    //   struct huff_table *table_AC
+   );
+
 #endif

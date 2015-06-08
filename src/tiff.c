@@ -111,8 +111,7 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
    /* printf ("strip_byte_count = %d\n", strip_byte_count); */
 
    /* /\* Longueur de la dernière strip *\/ */
-   /* uint32_t last_strip_length = (tfd->width * tfd->height * BYTES_PER_PIXEL) */
-   /*    - (strip_byte_count*(tfd->height / tfd->row_per_strip)); */
+   uint32_t last_strip_length = BYTES_PER_PIXEL * tfd->width * (tfd->height % tfd->row_per_strip);
    /* /\* if (!last_strip_length)  *\/last_strip_length = strip_byte_count; */
    /* printf ("last_strip_length = %d\n", last_strip_length); */
 
@@ -135,12 +134,12 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
    tiff_write_entry(tfd->tiff, ROWS_PER_STRIP, LONG, 1, tfd->row_per_strip);
 
    if (nb_strips == 1) {
-      /* tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 1, last_strip_length << 16); */
-      tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 1, (strip_byte_count << 16));
+      tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 1, last_strip_length << 16);
+      /* tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 1, (strip_byte_count << 16)); */
       tiff_write_entry(tfd->tiff, STRIP_OFFSET, SHORT, 1, FIRST_STRIP_OFFSET << 16);
    } else if (nb_strips == 2) {
-      /* tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 2, (strip_byte_count << 16) | last_strip_length); */
-      tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 2, (strip_byte_count << 16) | strip_byte_count);
+      tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 2, (strip_byte_count << 16) | last_strip_length);
+      /* tiff_write_entry(tfd->tiff, STRIP_BYTE_COUNTS, SHORT, 2, (strip_byte_count << 16) | strip_byte_count); */
       tiff_write_entry(tfd->tiff, STRIP_OFFSET, SHORT, 2,
 		       (FIRST_STRIP_OFFSET << 16) | (FIRST_STRIP_OFFSET + strip_byte_count));
    } else {
@@ -168,11 +167,11 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
       /* printf ("%d strips: \n", nb_strips); */
       /* printf ("longueurs: "); */
       /* Longueur des strips */
-      for (uint32_t i = 0; i < nb_strips ; i++) {
+      for (uint32_t i = 0; i < nb_strips - 1 ; i++) {
 	 /* printf ("%d ", strip_byte_count); */
 	 fput32b (tfd->tiff, strip_byte_count);
       }
-      /* fput32b (tfd->tiff, last_strip_length);      /\* Derniere strip de longueur plus courte *\/ */
+      fput32b (tfd->tiff, last_strip_length);      /* Derniere strip de longueur plus courte */
       /* printf ("%d ", last_strip_length); */
 
       /* Offsets des strips */
@@ -219,16 +218,16 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
    /************************ Initialisation stockage données ************************/
 
    /* Calcul de la taille réelle de l'image encodée  */
-   uint32_t nb_mcus_h = (tfd->height / tfd->row_per_strip) + (tfd->height % tfd->row_per_strip ? 1 : 0);
-   uint32_t nb_mcus_v = (tfd->width / tfd->row_per_strip) + (tfd->width % tfd->row_per_strip ? 1 : 0);
+   uint32_t nb_mcus_h = (tfd->height + tfd->row_per_strip - 1) / tfd->row_per_strip;
+   uint32_t nb_mcus_v = (tfd->width + tfd->row_per_strip - 1) / tfd->row_per_strip;
    /* printf ("nb_mcuh: %d | nb_mcuv : %d\n", nb_mcus_h, nb_mcus_v); */
    tfd->mcus_h = nb_mcus_h * tfd->row_per_strip;
    tfd->mcus_v = nb_mcus_v * tfd->row_per_strip;
    /* printf ("mcuh: %d | mcuv : %d\n", tfd->mcus_h, tfd->mcus_v); */
 
-   tfd->data = malloc (tfd->mcus_h * sizeof(uint32_t*));
+   tfd->data = malloc (tfd->height * sizeof(uint32_t*));
    check_alloc_tiff (tfd->data);
-   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
+   for (uint32_t i = 0; i < tfd->height; i++) {
       tfd->data[i] = malloc (tfd->width*sizeof(uint32_t));
       check_alloc_tiff (tfd->data[i]);
    }
@@ -245,7 +244,7 @@ void close_tiff_file(struct tiff_file_desc *tfd)
    /* printf ("x : %d | y : %d\n", tfd->x, tfd->y); */
 
    /* Ecriture des données dans le fichier */
-   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
+   for (uint32_t i = 0; i < tfd->height; i++) {
       for (uint32_t j = 0; j < tfd->width; j++) {
    	 fputc ((tfd->data[i][j] >> 16), tfd->tiff);
    	 fputc ((tfd->data[i][j] >> 8), tfd->tiff);
@@ -255,12 +254,12 @@ void close_tiff_file(struct tiff_file_desc *tfd)
 
    fclose(tfd->tiff);
 
-   for (uint32_t i = 0; i < tfd->mcus_h; i++) {
+   for (uint32_t i = 0; i < tfd->height; i++) {
       free (tfd->data[i]);
    }
    free (tfd->data);
    free(tfd);
-   tfd=NULL;
+   tfd = NULL;
 }
 
 /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
@@ -285,11 +284,11 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 	    }
 	    for (uint32_t j = l*MCU_BASE; j < (MCU_BASE + l*MCU_BASE); j++) {
 	       /* printf ("x : %d | y : %d | rgb : %d | wy: %d | wx: %d\n", tfd->x, tfd->y, */
-		       /* i * MCU_BASE * nb_blocks_h + j, tfd->y+i, tfd->x+j); */
-	       if ((tfd->x + j) >= tfd->width) {
-		  /* printf ("break\n\n"); */
-		  break;
+	       /* 	       i * MCU_BASE * nb_blocks_h + j, tfd->y+i, tfd->x+j); */
+	       if ((tfd->x + j) >= tfd->width || (tfd->y + i) >= tfd->height) {
+		  continue;
 	       }
+
 	       tfd->data[tfd->y + i][tfd->x + j] = mcu_rgb[i * MCU_BASE * nb_blocks_h + j];
 	    }
 	    /* printf ("\n"); */

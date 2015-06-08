@@ -61,3 +61,15 @@ uint16_t le16_to_cpu(const uint16_t v)
    else
       return v;
 }
+
+void print_block(uint8_t *bloc, uint32_t num_bloc)
+{
+   printf ("bloc numéro %d\n", num_bloc);
+   for (uint32_t i = 0; i < 8; i++) {
+      for (uint32_t j = 0; j < 8; j++) {
+	 printf ("%d ", bloc[8*i + j]);
+      }
+      printf ("\n ");
+   }
+   printf ("\n");
+}

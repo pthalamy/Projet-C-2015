@@ -56,10 +56,12 @@ struct tiff_file_desc {
    uint32_t rowsPerStrip;
    uint32_t sbcOffset;
    uint32_t soOffset;
-   uint32_t *imageScan;
+   uint32_t **imageScan;
    uint32_t nbStrips;
    uint32_t *stripByteCounts;
    uint32_t *stripOffsets;
+   uint32_t scanWidth;
+   uint32_t scanHeight;
 };
 
 void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
@@ -77,6 +79,11 @@ void read_nbytes (FILE *fp, enum endianness en, size_t nbytes, void *dest)
 	 *(uint16_t*)dest = be16_to_cpu (*(uint16_t*)dest);
       return;
    case 3:
+      if (en == LE)
+	 *(uint32_t*)dest = le32_to_cpu (*(uint32_t*)dest);
+      else
+	 *(uint32_t*)dest = be32_to_cpu (*(uint32_t*)dest) >> 8;
+      return;
    case 4:
       if (en == LE)
 	 *(uint32_t*)dest = le32_to_cpu (*(uint32_t*)dest);
@@ -264,33 +271,82 @@ void get_tiff_scan_data (struct tiff_file_desc *tfd)
    }
 
    /* Stockage des strips dans un tableau de pixel représentant le scan  */
-   tfd->imageScan = smalloc (tfd->imageLength * tfd->imageWidth * sizeof(uint32_t));
-   /* for (uint32_t i = 0; i < tfd->imageLength; i++) */
-   /*    tfd->imageScan[i] = smalloc (tfd->imageWidth * sizeof(uint32_t)); */
+   tfd->scanHeight = tfd->nbStrips * tfd->rowsPerStrip;
+   tfd->scanWidth = ((tfd->imageWidth + tfd->rowsPerStrip - 1)
+		     / tfd->rowsPerStrip) * tfd->rowsPerStrip;
+   printf ("H: %d W: %d\n", tfd->scanHeight, tfd->scanWidth);
+   tfd->imageScan = smalloc (tfd->scanHeight * sizeof(uint32_t*));
+   for (uint32_t i = 0; i < tfd->scanHeight; i++)
+      tfd->imageScan[i] = smalloc (tfd->scanWidth * sizeof(uint32_t));
 
-   uint32_t pix = 0;		/* Indice du pixel courant dans le scan */
+   uint32_t pix_x = 0;
+   uint32_t pix_y = 0;
 
    for (uint32_t i = 0; i < tfd->nbStrips; i++) {
       fseek (tfd->tiff, tfd->stripOffsets[i], SEEK_SET);
-      for (uint32_t j = 0; j < tfd->stripByteCounts[i] / 3; j++) {
-	 if (pix >= tfd->imageLength * tfd->imageWidth)
-	    continue;
-   	 read_nbytes (tfd->tiff, tfd->en, 3, &tfd->imageScan[pix++]);
+      for (uint32_t j = 0; j < tfd->stripByteCounts[i]; j  += 3) {
+	 if (pix_x >= tfd->scanWidth) {
+	    pix_y++;
+	    pix_x = 0;
+	 }
+	 /* printf ("i: %d j: %d pix_x = %d pix_y = %d\n", i, j, pix_x, pix_y); */
+   	 read_nbytes (tfd->tiff, tfd->en, 3, &tfd->imageScan[pix_y][pix_x++]);
+	 /* printf ("scan[%d][%d] = %#x\n", pix_y, pix_x - 1, tfd->imageScan[pix_y][pix_x-1]); */
       }
    }
 
-   printf ("\npix %d at offset %#lx, with %d pixels in image\n", pix, ftell (tfd->tiff), tfd->imageLength * tfd->imageWidth);
+   printf ("\npix_x = %d pix_y = %d\n", pix_x, pix_y);
+   printf ("pix %d at offset %#lx, with %d pixels in image\n", pix_x * pix_y,
+	   ftell (tfd->tiff), tfd->imageLength * tfd->imageWidth);
 }
 
-uint32_t **split_scan_into_blocks (struct tiff_file_desc *tfd)
+uint32_t **split_scan_into_blocks(struct tiff_file_desc *tfd, uint32_t *nbBlocksH, uint32_t *nbBlocksV)
 {
-   return NULL;
+   *nbBlocksH = (tfd->imageWidth + 7) / 8;
+   *nbBlocksV = (tfd->imageLength + 7) / 8;
+   uint32_t nbBlocks = *nbBlocksH * *nbBlocksV;
+   printf ("nbBlocksH: %d | nbBlocksV: %d => nbBlocks: %d\n", *nbBlocksH, *nbBlocksV, nbBlocks);
+
+   uint32_t **blocks = smalloc (nbBlocks * sizeof (uint32_t *));
+   for (uint32_t i = 0; i < nbBlocks; i++)
+      blocks[i] = smalloc (64 * sizeof (uint32_t));
+
+   uint32_t bloc_id = 0;
+   uint32_t pix = 0;
+   uint32_t src_pix_x = 0;
+   uint32_t src_pix_y = 0;
+
+   for (uint32_t i = 0; i < *nbBlocksV; i++) {
+      for (uint32_t j = 0; j < *nbBlocksH; j++) {
+
+	 for (uint32_t k = 0; k < 8; k++) {
+	    for (uint32_t l = 0; l < 8; l++) {
+	       bloc_id = *nbBlocksH * i + j;
+	       pix = 8*k + l;
+	       src_pix_x = 8 * j + l;
+	       src_pix_y = 8 * *nbBlocksH * i + k;
+	       if (src_pix_x < tfd->imageWidth && src_pix_y < tfd->imageLength) {
+	 	  printf ("blocks[%d][%d] = scan[%d + %d = %d]\n", bloc_id, pix, src_pix_x, src_pix_y, src_pix_x + 8 * src_pix_y);
+	 	  blocks[bloc_id][pix] = tfd->imageScan[src_pix_x + 8 * src_pix_y];
+	       } else {
+	 	  printf ("blocks[%d][%d] = 0\n", bloc_id, pix);
+	 	  blocks[bloc_id][pix] = 0;
+	       }
+	    }
+	 }
+
+      }
+   }
+
+   return blocks;
 }
 
 void free_tfd (struct tiff_file_desc *tfd)
 {
    if (tfd) {
       fclose (tfd->tiff);
+      for (uint32_t i = 0; i < tfd->scanHeight; i++)
+	 free (tfd->imageScan[i]);
       free (tfd->imageScan);
       free (tfd->stripOffsets);
       free (tfd->stripByteCounts);

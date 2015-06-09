@@ -16,16 +16,18 @@ struct jpeg_file_desc;
    - height: la hauteur de l'image ;
    - sfh, sfv : facteurs d'échantillonage horizontaux et verticaux
 */
-extern struct jpeg_file_desc *init_jpeg_file (struct bitstream *stream,
-					      const char *file_name,
+extern struct jpeg_file_desc *init_jpeg_file (const char *output_name,
                                               uint32_t width,
                                               uint32_t height,
                                               uint8_t sfh,
 					      uint8_t sfv);
 
+extern void export_DQT(struct jpeg_file_desc *jfd,
+		       const uint8_t table_quantif[2][64]);
+
 /* Ferme le fichier associé à la structure jpeg_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
-extern void close_jpeg_file(struct bitstream *stream, struct jpeg_file_desc *jfd);
+extern void close_jpeg_file(struct jpeg_file_desc *jfd);
 
 /* /\* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF */
 /*  * représenté par la structure tiff_file_desc tfd. nb_blocks_h et */

@@ -30,13 +30,6 @@ int main(int argc, char **argv)
    /* Vérification de la validité du nom et création du nom du fichier de sortie */
    char *output_name = check_and_gen_name (argv[1]);
 
-   /* Initialisation du bitstream */
-   struct bitstream *stream = create_bitstream(output_name);
-   if (!stream) {
-      fprintf(stderr, "Impossible de créer le bitstream.\n");
-      exit (EXIT_FAILURE);
-   }
-
    /* TIFF */
    printf ("\nTIFF\n");
 
@@ -61,7 +54,7 @@ int main(int argc, char **argv)
    /* INIT JPEG */
    printf ("\nINIT JPEG\n");
    /* Initialisation du jpeg de sortie */
-   struct jpeg_file_desc *jfd = init_jpeg_file (stream, output_name, 0, 0, 0, 0);
+   struct jpeg_file_desc *jfd = init_jpeg_file (output_name, 0, 0, 0, 0);
    if (!jfd) {
       fprintf(stderr, "Impossible de créer le fichier de sortie.\n");
       exit (EXIT_FAILURE);
@@ -139,6 +132,7 @@ int main(int argc, char **argv)
       i++;
    }
 
+   export_DQT (jfd, table_quantif);
 
    /* HUFFMAN */
    printf ("\nHUFFMAN\n");
@@ -224,7 +218,7 @@ int main(int argc, char **argv)
    /*    i++; */
    /* } */
 
-   close_jpeg_file (stream, jfd);
+   close_jpeg_file (jfd);
 
    /* FREE */
 
@@ -254,7 +248,6 @@ int main(int argc, char **argv)
    /* free (freq_DC_C); */
 
    free_tfd (tfd);
-   free_bitstream(stream);
    free (output_name);
 
    return (EXIT_SUCCESS);

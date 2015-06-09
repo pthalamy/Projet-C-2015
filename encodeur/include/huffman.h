@@ -2,7 +2,10 @@
 #define __HUFFMAN_H__
 
 #include "bitstream.h"
-
+#include "pack.h"
+#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -28,9 +31,11 @@ void init_freq(int32_t bloc[64],
 
 
 
+extern struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt);
+
 struct huff_table;
 
-extern struct huff_table create_huffman_table(struct elt tab[256]);
+extern struct abr *create_huffman_table(struct elt tab[256]);
 
 extern void store_huffman_table(struct bitstream *stream, struct huff_table *ht);
 

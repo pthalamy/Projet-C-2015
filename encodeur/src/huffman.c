@@ -1,8 +1,6 @@
-#include "pack.h"
 #include "huffman.h"
-#include "utils.h"
-#include <stdio.h>
-#include <stdlib.h>
+
+
 
 
 
@@ -104,43 +102,44 @@ void init_freq(int32_t bloc[64],
 /*Echange deux éléments d'un tas*/
 void swap_heap(struct elt *a, struct elt *b){
    struct elt *temp=malloc (sizeof(struct elt));
+   temp->abr=malloc(sizeof(struct abr));
    temp->occ= a->occ;
    temp->abr->symbole=a->abr->symbole ;
    a->occ=b->occ ;
    a->abr->symbole=b->abr->symbole ;
    b->occ=temp->occ;
    b->abr->symbole=temp->abr->symbole ;
-
+   free(temp->abr);
    free(temp);
 }
 
 /*Insertion d'un élément dans le tas */
+
 void insert_heap(struct elt *x, struct elt *heap,
 		 uint8_t ind, uint8_t taille_heap){
 
    uint8_t i =ind ;
    if (ind >taille_heap){
-      printf("tas plein !");
+      printf("Tas plein !");
    };
 
    /*insertion à la fin du tas*/
+   heap[ind].abr=malloc(sizeof(struct abr));
    heap[ind].abr->symbole=x->abr ->symbole ;
    heap[ind].occ= x->occ ;
    ind++;// ind est l'indice de la 1e case vide du tas
+
 
    /*tant que le champ occ du père est supérieur à celui de x on les échange */
    while (i>0){
       if (heap[i].occ < heap[i/2].occ){
 	 swap_heap(&heap[i], &heap[i/2]);
 	 i=i/2 ;
+      } else {
+	 i=0;
       }
    }
 }
-
-
-
-
-
 
 /*Recupère l'élément de plus faible occurrence*/
 struct elt *best_elt(struct elt *heap, uint8_t ind){
@@ -189,32 +188,41 @@ void delete_elt(struct elt *heap, uint8_t ind){
 
 /*Transformation du tableau en file de priorité */
 
-struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
 
-  /* Création d'un tas de bonne taille */
-  int32_t i =0 ;
+
+
+struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt ){
+
+   /* Création d'un tas de bonne taille */
+   int32_t i =0 ;
    bool fin_tab=false ;
-   while ((! fin_tab)& (i<256)) {
-      if (tab[i].occ==0){
+
+   while ((! fin_tab)&& (i<256)) {
+
+      if (tab[i]==NULL){
 	 fin_tab=true;
+
       } else {
 	 i++;
       }
 
-      *nb_elt=i+1;
+      *nb_elt=i;
    }
 
+
+
    /*Allocation du tas */
-   struct elt *heap=smalloc(*nb_elt*sizeof(struct elt));
+   struct elt *heap=malloc(*nb_elt*sizeof(struct elt));
+
 
    /* Remplissage du tas */
    for (uint8_t j=0; j<*nb_elt; j++){
-      insert_heap(&tab[j], heap, j, *nb_elt) ;
+      insert_heap(tab[j], heap, j, *nb_elt) ;
    }
-
 
    return heap ;
 }
+
 
 
 /*Libération d'un tas*/
@@ -234,47 +242,51 @@ struct huff_table {
 
 
 
- struct huff_table create_huffman_table(struct elt tab[256])
-   {
-      uint8_t nb_elt;
-      struct elt *gauche ;
-      struct elt *droit ;
-      uint8_t sum_occ ;
-      struct elt *pere ;
+struct abr *create_huffman_table(struct elt tab[256])
+{
+   uint8_t nb_elt;
+   struct elt *gauche ;
+   struct elt *droit ;
+   uint8_t sum_occ ;
+   struct elt *pere ;
 
-      /*Transformation du tableau en tas */
-      struct elt *heap=tab_to_heap( tab,  &nb_elt);
+   /*Transformation du tableau en tas */
+   struct elt *heap=tab_to_heap( &tab,  &nb_elt);
 
-      /*Tant que il reste des elt a traiter*/
-      while (nb_elt>0){
-	 sum_occ = 0 ;
+   /*Tant que il reste des elt a traiter*/
+   while (nb_elt>0){
+      sum_occ = 0 ;
 
-	 /*Fusion des deux meilleurs noeuds en un arbre*/
+      /*Fusion des deux meilleurs noeuds en un arbre*/
 
-	 gauche=best_elt(heap, nb_elt);
-	 sum_occ=gauche->occ ;
-	 delete_elt(heap, nb_elt);
-	 nb_elt --;
+      gauche=best_elt(heap, nb_elt);
+      sum_occ=gauche->occ ;
+      delete_elt(heap, nb_elt);
+      nb_elt --;
 
 
-	 droit =best_elt(heap, nb_elt);
-	 sum_occ=droit->occ;
-	 delete_elt(heap, nb_elt);
-	 nb_elt --;
+      droit =best_elt(heap, nb_elt);
+      sum_occ=droit->occ;
+      delete_elt(heap, nb_elt);
+      nb_elt --;
 
-	 pere = smalloc(sizeof(struct elt));
-	 pere->abr->gauche=gauche ;
-	 pere->abr->droit=droit ;
-	 pere->occ=sum_occ ;
-	 pere->abr->est_feuille=false ;
+      pere = smalloc(sizeof(struct elt));
+      pere->abr->gauche=gauche ;
+      pere->abr->droit=droit ;
+      pere->occ=sum_occ ;
+      pere->abr->est_feuille=false ;
 
-	 insert_heap(pere, heap, nb_elt, nb_elt);
-	 nb_elt ++;
+      insert_heap(pere, heap, nb_elt, nb_elt);
+      nb_elt ++;
 
-      }
-      /*Désallocation*/
-      free_heap(heap);
+
+
    }
+   /*Désallocation*/
+   free_heap(heap);
+
+   return (heap[0].abr);
+}
 
 void store_huffman_table(struct bitstream *stream, struct huff_table *ht)
 {

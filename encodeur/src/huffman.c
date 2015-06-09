@@ -141,29 +141,30 @@ void insert_heap(struct elt *x, struct elt *heap,
    }
 }
 
+
 /*Recupère l'élément de plus faible occurrence*/
-struct elt *best_elt(struct elt *heap, uint8_t ind){
+struct elt best_elt(struct elt *heap, uint8_t ind){
 
    if (ind==0){
       printf("tas vide \n");
    };
 
-   return &heap[0];
+   return heap[0].occ;
 
 
 }
 
 /*Supprime l'élément de plus faible occurrence */
-void delete_elt(struct elt *heap, uint8_t ind){
+void delete_elt(struct elt *heap, uint8_t *ind){
 
-   if (ind==0){
+   if (*ind==0){
       printf("Tas vide :impossible de supprimer un élément ");
    };
 
    /* Derniere feuille passe en racine */
-   swap_heap(&heap[0], &heap[ind-1]) ;
-   heap[ind-1].occ=0 ;
-   ind--;
+   swap_heap(&heap[0], &heap[*ind-1]) ;
+   heap[*ind-1].occ=0 ;
+   (*ind)--;
 
    /*Tant qu'on n'est pas sur une feuille */
    /* si un des fils a une occurrence plus faible que le pere, on les echange */
@@ -171,7 +172,7 @@ void delete_elt(struct elt *heap, uint8_t ind){
    uint8_t i=0 ;
    uint8_t min ;
    /* Calcul du fils avec la plus faible occurrence */
-   while (i<(ind-1)/2){
+   while (i<(*ind-1)/2){
       if (heap[2*i].occ > heap[2*i+1].occ){
 	 min=2*i+1;
       } else {
@@ -187,8 +188,6 @@ void delete_elt(struct elt *heap, uint8_t ind){
 }
 
 /*Transformation du tableau en file de priorité */
-
-
 
 
 struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt ){
@@ -261,13 +260,13 @@ struct abr *create_huffman_table(struct elt tab[256])
 
       gauche=best_elt(heap, nb_elt);
       sum_occ=gauche->occ ;
-      delete_elt(heap, nb_elt);
+      delete_elt(heap, &nb_elt);
       nb_elt --;
 
 
       droit =best_elt(heap, nb_elt);
       sum_occ=droit->occ;
-      delete_elt(heap, nb_elt);
+      delete_elt(heap, &nb_elt);
       nb_elt --;
 
       pere = smalloc(sizeof(struct elt));

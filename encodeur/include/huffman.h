@@ -6,17 +6,24 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+struct abr {
+   uint8_t symbole ;
+   struct elt *gauche ;
+   struct elt *droit ;
+   bool est_feuille ;
+};
+
 
 struct elt {
-   uint8_t symbole ;
+   struct abr *abr ;
    uint8_t occ ;
 
 };
 
 /* Parcours d'un bloc, stockage des symboles dans un tableau*/
 void init_freq(int32_t bloc[64],
-	       struct elt freq_DC[256], uint8_t ind_DC,
-	       struct elt freq_AC[256], uint8_t ind_AC,
+	       struct elt *freq_DC[256], uint8_t ind_DC,
+	       struct elt *freq_AC[256], uint8_t ind_AC,
 	       int32_t  *pred_DC);
 
 

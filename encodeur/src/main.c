@@ -37,7 +37,10 @@ int main(int argc, char **argv)
       exit (1);
    }
 
+   /* TIFF */
+
    /* Initialisation du lecteur de TIFF */
+   printf ("\nTIFF\n");
    struct tiff_file_desc *tfd = create_tfd_and_read_header (argv[1]);
    if (!tfd) {
       fprintf(stderr, "Impossible d'ouvrir le fichier TIFF. Le fichier spécifié n'existe pas.\n");
@@ -49,17 +52,25 @@ int main(int argc, char **argv)
 
    /* Lecture des données des l'image et découpage en blocs 8*8 */
    get_tiff_scan_data (tfd);
-   /* uint32_t nbBlocksH, nbBlocksV; */
-   /* uint32_t **blocks = split_scan_into_blocks(tfd, &nbBlocksH, &nbBlocksV); */
-   /* uint32_t nbBlocks = nbBlocksV * nbBlocksH; */
+   uint32_t nbBlocsH, nbBlocsV;
+   uint32_t **blocs_scan = split_scan_into_blocks(tfd, &nbBlocsH, &nbBlocsV);
+   uint32_t nbBlocs = nbBlocsV * nbBlocsH;
 
-   /* for (uint32_t i = 0; i < nbBlocks; i++) { */
-   /*    /\* print_block(blocks[i], i); *\/ */
+   /* for (uint32_t i = 0; i < nbBlocs; i++) { */
+   /*    print_block(blocs[i], i); */
    /* } */
 
-   /* for (uint32_t i = 0; i < nbBlocks; i++) */
-   /*    free (blocks[i]); */
-   /* free (blocks); */
+   /* DOWNSAMPLING */
+   printf ("\DOWNSAMPLING 4:2:0\n");
+   uint32_t **blocs;
+   for (uint32_t i = 0; i < nbBlocs; i++) {
+      print_block(blocs[i], i);
+   }
+
+
+   for (uint32_t i = 0; i < nbBlocs; i++)
+      free (blocs[i]);
+   free (blocs);
    free_tfd (tfd);
    free_bitstream(stream);
    free (output_name);

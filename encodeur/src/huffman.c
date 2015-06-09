@@ -1,6 +1,7 @@
 #include "huffman.h"
 
-
+#define ZRL 0xf0
+#define EOB 0x00
 
 /*Recherche un symbole dans un tableau tab[256] */
 /*renvoie -1 si l'element n'y est pas, i si tab[i].abr->abr->symbole =symb  */
@@ -46,17 +47,48 @@ void init_freq(int32_t bloc[64],
    uint8_t i = 1 ;
    uint8_t nb_zeros=0;
    uint8_t val ;
-   uint8_t der =1; 		/* Dernier indice non nul */
 
-   while (i < 64){
+   while (i < 64) {
       // si on a un zéro on passe au coeff suivant en incrémentant le compteur
-      if (bloc[i]==0){
+      if (bloc[i] == 0 && i < 63){
 	 nb_zeros++;
 	 i++;
       } else {
-	 if (nb_zeros>16){
-	    fprintf(stderr, "erreur: format incorrect\n");
-	    exit (EXIT_FAILURE);
+	 if (bloc[i] == 0 || nb_zeros > 16) {
+	    val = EOB;
+
+	    /*Maj de freq_AC*/
+	    x = recherche_tab(freq_AC, EOB);
+	    if (x == -1) {
+	       freq_AC[*ind_AC] = malloc (sizeof(struct elt));
+	       freq_AC[*ind_AC]->abr = malloc (sizeof(struct abr));
+	       freq_AC[*ind_AC]->abr->symbole = EOB ;
+	       freq_AC[*ind_AC]->occ= 1 ;
+	       (*ind_AC)++;
+	    } else {
+	       freq_AC[x]->occ++;
+	    }
+
+	    return;
+	 }
+
+	 /* if (nb_zeros > 16) { */
+	 /*    fprintf(stderr, "erreur: format incorrect\n"); */
+	 /*    exit (EXIT_FAILURE); */
+	 /* } else  */
+	 if (nb_zeros == 16) {
+	    /*Maj de freq_AC*/
+	    x = recherche_tab(freq_AC, ZRL);
+	    if (x == -1) {
+	       freq_AC[*ind_AC] = malloc (sizeof(struct elt));
+	       freq_AC[*ind_AC]->abr = malloc (sizeof(struct abr));
+	       freq_AC[*ind_AC]->abr->symbole = ZRL ;
+	       freq_AC[*ind_AC]->occ= 1 ;
+	       (*ind_AC)++;
+	    } else {
+	       freq_AC[x]->occ++;
+	    }
+	    nb_zeros = 0;
 	 }
 
 	 /*calcul du symbole (nb zeros + mag) */
@@ -64,27 +96,22 @@ void init_freq(int32_t bloc[64],
 	 val = (nb_zeros << 4) | (0x0f & mag);
 
 	 /*maj indices*/
-	 der = i;
 	 i++;
 	 nb_zeros=0;
 
+	 /*Maj de freq_AC*/
+	 x = recherche_tab(freq_AC, val);
+	 if (x == -1){
+	    freq_AC[*ind_AC] = malloc (sizeof(struct elt));
+	    freq_AC[*ind_AC]->abr = malloc (sizeof(struct abr));
+	    freq_AC[*ind_AC]->abr->symbole=val ;
+	    freq_AC[*ind_AC]->occ= 1 ;
+	    (*ind_AC)++;
+	 } else {
+	    freq_AC[x]->occ++;
+	 }
       }
 
-      if (der != 63){
-	 val = 0x00;
-      }
-
-      /*Maj de freq_AC*/
-      x = recherche_tab(freq_AC, val);
-      if (x == -1){
-	 freq_AC[*ind_AC] = malloc (sizeof(struct elt));
-	 freq_AC[*ind_AC]->abr = malloc (sizeof(struct abr));
-	 freq_AC[*ind_AC]->abr->symbole=val ;
-	 freq_AC[*ind_AC]->occ= 1 ;
-	 (*ind_AC)++;
-      } else {
-	 freq_AC[x]->occ++;
-      }
    }
 }
 

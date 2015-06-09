@@ -143,7 +143,6 @@ int main(int argc, char **argv)
       for (uint32_t j = i; j < i + 4; j++) {
 	 print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j);
    	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[0]);
-	 exit(1);
       }
       i += 4;
       /* 1 Bloc Cb */

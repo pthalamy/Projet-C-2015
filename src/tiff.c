@@ -28,7 +28,7 @@
 #define BPS_OFFSET 0x0000009e
 #define NO_COMPRESSION 0x10000
 #define RGB_IMAGE 0x20000
-#define BIG_ENDIAN 0x4d4d
+#define BIG_ENDIAN_CODE 0x4d4d
 #define TIFF_ID 0x002a
 #define SPP_3 0x3
 #define X_RES_OFFSET 0xa4
@@ -85,7 +85,7 @@ void fput32b(FILE *fp,  uint32_t v)
 
 void tiff_write_header(struct tiff_file_desc *tfd)
 {
-   fput16b(tfd->tiff, BIG_ENDIAN);
+   fput16b(tfd->tiff, BIG_ENDIAN_CODE);
    fput16b(tfd->tiff, TIFF_ID);
    fput32b(tfd->tiff, OFFSET_FIRST_IFD);
 }

@@ -132,7 +132,6 @@ int main(int argc, char *argv[]){
       case APP0 :		/* 0xe0 : encapsulation JFIF */
 	 /* printf ("APP0: \n"); */
 	 read_nbytes(stream, 2, &longueur_section, false);
-	 longueur_section = longueur_section;
 	 /* printf (" longeur section: %d\n", longueur_section); */
 
 	 /* Lecture  de JFIF */

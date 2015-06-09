@@ -4,6 +4,6 @@
 
 #include <stdint.h>
 
-//extern void idct_block(int32_t in[64], uint8_t out[64]);
 extern void idct_block(int32_t in[64], uint8_t out[64]);
+
 #endif

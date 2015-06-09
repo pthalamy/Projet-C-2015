@@ -141,7 +141,7 @@ int main(int argc, char **argv)
    for (uint32_t i = 0; i < nbBlocs; ) {
       /* 4 Blocs de Luminance */
       for (uint32_t j = i; j < i + 4; j++) {
-	 print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j);
+	 /* print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j); */
    	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[0]);
       }
       i += 4;
@@ -153,8 +153,8 @@ int main(int argc, char **argv)
       i++;
    }
 
-   /* struct abr *table_DC = create_huffman_table(freq_DC, &int_DC); */
-   /* struct abr *table_AC = create_huffman_table(freq_DC, &int_DC); */
+   struct abr *table_DC = create_huffman_table(freq_DC, &ind_DC);
+   struct abr *table_AC = create_huffman_table(freq_AC, &ind_AC);
 
    /* FREE */
 

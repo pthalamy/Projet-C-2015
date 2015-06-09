@@ -193,7 +193,7 @@ void delete_elt(struct elt *heap, uint8_t *ind){
    uint8_t i=0 ;
    uint8_t min ;
    /* Calcul du fils avec la plus faible occurrence */
-   while (i<(*ind-1)/2){
+   while (i < (*ind-1)/2){
       if (heap[2*i].occ > heap[2*i+1].occ){
 	 min=2*i+1;
       } else {
@@ -263,19 +263,23 @@ struct huff_table {
 
 
 
-struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
+struct abr *create_huffman_table(struct elt *tab[256], uint8_t *nb_elt)
 {
-
+   printf ("in1\n");
    struct abr *gauche ;
    struct abr *droit ;
    uint8_t sum_occ ;
    struct elt *pere ;
 
    /*Transformation du tableau en tas */
-   struct elt *heap=tab_to_heap( &tab,  nb_elt);
+   struct elt *heap = tab_to_heap(tab,  nb_elt);
+
+   printf ("in2\n");
 
    /*Tant que il reste des elt a traiter*/
-   while (*nb_elt>0){
+   while (*nb_elt > 1){
+      printf ("nb_elt: %d\n", *nb_elt);
+
       sum_occ = 0 ;
 
       /*Fusion des deux meilleurs noeuds en un arbre*/
@@ -283,15 +287,13 @@ struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
       gauche=best_elt(heap, *nb_elt).abr;
       sum_occ=best_elt(heap, *nb_elt).occ ;
       delete_elt(heap, nb_elt);
-      (*nb_elt)--;
-
 
       droit =best_elt(heap, *nb_elt).abr;
       sum_occ=best_elt(heap, *nb_elt).occ;
       delete_elt(heap, nb_elt);
-      (*nb_elt)--;
 
       pere = smalloc(sizeof(struct elt));
+      pere->abr = smalloc(sizeof(struct abr));
       pere->abr->gauche=gauche ;
       pere->abr->droit=droit ;
       pere->occ=sum_occ ;
@@ -299,10 +301,10 @@ struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
 
       insert_heap(pere, heap, *nb_elt, *nb_elt);
       (*nb_elt)++;
-
-
-
    }
+
+   printf ("quasi out\n");
+
    /*Désallocation*/
    free_heap(heap);
 

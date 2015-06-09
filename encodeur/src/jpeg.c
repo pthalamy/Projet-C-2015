@@ -15,12 +15,17 @@
 #define EOI 0xffd9
 #define SOI 0xffd8
 
+#define NUM_COMPOSANTES 3
+
 struct jpeg_file_desc {
    struct bitstream *stream;
    uint32_t imageWidth;
    uint32_t imageHeight;
-   uint8_t sfh;
-   uint8_t sfv;
+   uint8_t sfh[3];
+   uint8_t sfv[3];
+   uint8_t N;
+   uint32_t iq[3];
+   uint32_t ic[3];
 };
 
 struct jpeg_file_desc *init_jpeg_file (const char* output_name,
@@ -40,8 +45,24 @@ struct jpeg_file_desc *init_jpeg_file (const char* output_name,
 
    jfd->imageWidth = width;
    jfd->imageHeight = height;
-   jfd->sfh = sfh;
-   jfd->sfv = sfv;
+
+   jfd->sfh[0] = sfh;
+   jfd->sfh[1] = 1;
+   jfd->sfh[2] = 1;
+
+   jfd->sfv[0] = sfv;
+   jfd->sfv[1] = 1;
+   jfd->sfv[2] = 1;
+
+   jfd->N = NUM_COMPOSANTES;
+
+   jfd->iq[0] = 0;
+   jfd->iq[1] = 1;
+   jfd->iq[2] = 1;
+
+   jfd->ic[0] = 1;
+   jfd->ic[1] = 2;
+   jfd->ic[2] = 3;
 
    /* Écriture du marqueur SOI */
    write_bitstream (jfd->stream, 16, SOI);
@@ -91,6 +112,27 @@ void export_DQT(struct jpeg_file_desc *jfd,
       }
    }
 
+}
+
+void export_SOF0(struct jpeg_file_desc *jfd)
+{
+   printf ("-> SOF0: \n");
+   write_bitstream (jfd->stream, 16, SOF0);
+
+   write_bitstream (jfd->stream, 16, 17); /* Longueur */
+   write_bitstream (jfd->stream, 8, 8);  /* Precision */
+
+   write_bitstream (jfd->stream, 16, jfd->imageHeight);
+   write_bitstream (jfd->stream, 16, jfd->imageWidth);
+
+   write_bitstream (jfd->stream, 8, jfd->N);
+
+   for(uint8_t i = 0; i < jfd->N; i++) {
+      write_bitstream (jfd->stream, 8, jfd->ic[i]);
+      write_bitstream (jfd->stream, 4, jfd->sfh[i]);
+      write_bitstream (jfd->stream, 4, jfd->sfv[i]);
+      write_bitstream (jfd->stream, 8, jfd->iq[i]);
+   }
 }
 
 void close_jpeg_file(struct jpeg_file_desc *jfd)

@@ -133,6 +133,7 @@ int main(int argc, char **argv)
    }
 
    export_DQT (jfd, table_quantif);
+   export_SOF0 (jfd);
 
    /* HUFFMAN */
    printf ("\nHUFFMAN\n");

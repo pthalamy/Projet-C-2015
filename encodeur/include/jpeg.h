@@ -25,6 +25,8 @@ extern struct jpeg_file_desc *init_jpeg_file (const char *output_name,
 extern void export_DQT(struct jpeg_file_desc *jfd,
 		       const uint8_t table_quantif[2][64]);
 
+extern void export_SOF0(struct jpeg_file_desc *jfd);
+
 /* Ferme le fichier associé à la structure jpeg_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
 extern void close_jpeg_file(struct jpeg_file_desc *jfd);

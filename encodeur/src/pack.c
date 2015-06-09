@@ -1,7 +1,7 @@
 #include "pack.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "huffman.h"
 
 uint8_t magnitude(int32_t val){
 
@@ -27,7 +27,7 @@ uint8_t val_to_mag(int32_t val,uint8_t mag){
 /* Codage différentiel de DC */
 void diff_DC(struct bitstream *stream,
 	     int32_t  *pred_DC,
-	     //struct huff_table *table_DC,
+	    struct abr *table_DC,
 	     int32_t bloc[64] ){
 
 
@@ -39,9 +39,10 @@ void diff_DC(struct bitstream *stream,
 
    /*Ecriture du code de la magnitude dans bitstream */
 
-   //int32_t code_mag = huffman(mag, table_DC)
-   //int32_t nb_bits=magnitude(code_mag) ;
-   //write_bitstream(stream, nb_bits, code_mag);
+   uint8_t *code_mag;
+   uint8_t nb_bits ;
+   huffman_value( table_DC,mag, code_mag, &nb_bits);
+   write_bitstream(stream, nb_bits, *code_mag);
 
    /* Ecriture de l'indice de val dans bitstream*/
    uint32_t ind=(uint32_t)val_to_mag(dc,mag );
@@ -54,8 +55,8 @@ void diff_DC(struct bitstream *stream,
 /*Codage RLE des coefficients AC*/
 // Attention ne marche qu'avec des blocs  8*8
 void RLE_AC(struct bitstream *stream,
-	    int32_t bloc[64]
-	    //   struct huff_table *table_AC
+	    int32_t bloc[64],
+	    struct abr *table_AC
    ){
 
    uint8_t i=1 ;

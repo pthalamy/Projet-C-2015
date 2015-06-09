@@ -132,36 +132,87 @@ int main(int argc, char **argv)
 
    /* HUFFMAN */
    printf ("\nHUFFMAN\n");
-   struct elt **freq_DC_Y = scalloc (256, sizeof(struct elt*));
-   struct elt **freq_AC_Y = scalloc (256, sizeof(struct elt*));
-   struct elt **freq_DC_C = scalloc (256, sizeof(struct elt*));
-   struct elt **freq_AC_C = scalloc (256, sizeof(struct elt*));
-   uint8_t ind_DC_Y;
-   uint8_t ind_AC_Y;
-   uint8_t ind_DC_C;
-   uint8_t ind_AC_C;
-   int32_t pred_DC_Y;
-   int32_t pred_DC_C;
+   struct huff_table *table_DC_Y = create_huffman_table(DC_Y_len, DC_Y_sym);
+   /* affiche_huffman (table_DC_Y); */
+   struct huff_table *table_AC_Y = create_huffman_table(AC_Y_len, AC_Y_sym);
+   /* affiche_huffman (table_AC_Y); */
+   struct huff_table *table_DC_C = create_huffman_table(DC_C_len, DC_C_sym);
+   /* affiche_huffman (table_DC_C); */
+   struct huff_table *table_AC_C = create_huffman_table(AC_C_len, AC_C_sym);
+   /* affiche_huffman (table_AC_C); */
 
-   for (uint32_t i = 0; i < nbBlocs; ) {
-      /* 4 Blocs de Luminance */
-      for (uint32_t j = i; j < i + 4; j++) {
-	 /* print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j); */
-   	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC_Y, &ind_DC_Y, freq_AC_Y, &ind_AC_Y, &pred_DC_Y);
-      }
-      i += 4;
-      /* 1 Bloc Cb */
-      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C);
-      i++;
-      /* 1 Bloc Cr */
-      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C);
-      i++;
-   }
+   /* struct elt **freq_DC_Y = scalloc (256, sizeof(struct elt*)); */
+   /* struct elt **freq_AC_Y = scalloc (256, sizeof(struct elt*)); */
+   /* struct elt **freq_DC_C = scalloc (256, sizeof(struct elt*)); */
+   /* struct elt **freq_AC_C = scalloc (256, sizeof(struct elt*)); */
+   /* uint8_t ind_DC_Y; */
+   /* uint8_t ind_AC_Y; */
+   /* uint8_t ind_DC_C; */
+   /* uint8_t ind_AC_C; */
+   /* int32_t pred_DC_Y; */
+   /* int32_t pred_DC_C; */
 
-   struct abr *table_DC_Y = create_huffman_table(freq_DC_Y, &ind_DC_Y);
-   struct abr *table_AC_Y = create_huffman_table(freq_AC_Y, &ind_AC_Y);
-   struct abr *table_DC_C = create_huffman_table(freq_DC_C, &ind_DC_C);
-   struct abr *table_AC_C = create_huffman_table(freq_AC_C, &ind_AC_C);
+   /* for (uint32_t i = 0; i < nbBlocs; ) { */
+   /*    /\* 4 Blocs de Luminance *\/ */
+   /*    for (uint32_t j = i; j < i + 4; j++) { */
+   /* 	 /\* print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j); *\/ */
+   /* 	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC_Y, &ind_DC_Y, freq_AC_Y, &ind_AC_Y, &pred_DC_Y); */
+   /*    } */
+   /*    i += 4; */
+   /*    /\* 1 Bloc Cb *\/ */
+   /*    init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C); */
+   /*    i++; */
+   /*    /\* 1 Bloc Cr *\/ */
+   /*    init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C); */
+   /*    i++; */
+   /* } */
+
+   /* printf ("Nombre de symboles: %d\n", ind_DC_Y); */
+   /* printf("< "); */
+   /* for (uint8_t i = 0; i < ind_DC_Y; i++) { */
+   /*    printf("%d ", freq_DC_Y[i]->occ); */
+   /* } */
+   /* printf(">\n"); */
+   /* printf("[ "); */
+   /* for (uint8_t i = 0; i < ind_DC_Y; i++) { */
+   /*    printf("%#x ", freq_DC_Y[i]->abr->symbole); */
+   /* } */
+   /* printf("]\n"); */
+
+   /* struct abr *table_DC_Y = create_huffman_table(freq_DC_Y, &ind_DC_Y); */
+   /* printf ("DC Y:\n"); */
+   /* affiche_huffman (table_DC_Y); */
+   /* struct abr *table_AC_Y = create_huffman_table(freq_AC_Y, &ind_AC_Y); */
+   /* printf ("AC Y:\n"); */
+   /* affiche_huffman (table_DC_Y); */
+   /* struct abr *table_DC_C = create_huffman_table(freq_DC_C, &ind_DC_C); */
+   /* printf ("DC C:\n"); */
+   /* affiche_huffman (table_DC_Y); */
+   /* struct abr *table_AC_C = create_huffman_table(freq_AC_C, &ind_AC_C); */
+   /* printf ("AC C:\n"); */
+   /* affiche_huffman (table_DC_Y); */
+   /* exit (1); */
+
+   /* /\* PACK *\/ */
+   /* printf ("\nPACK\n"); */
+   /* pred_DC_C = 0; */
+   /* pred_DC_Y = 0; */
+   /* for (uint32_t i = 0; i < nbBlocs; ) { */
+   /*    /\* 4 Blocs de Luminance *\/ */
+   /*    for (uint32_t j = i; j < i + 4; j++) { */
+   /* 	 diff_DC(stream, &pred_DC_Y, table_DC_Y,  qzzBlocs + j * (64 * sizeof(int32_t))); */
+   /* 	 RLE_AC(stream, qzzBlocs + j * (64 * sizeof(int32_t)), table_AC_Y); */
+   /*    } */
+   /*    i += 4; */
+   /*    /\* 1 Bloc Cb *\/ */
+   /*    diff_DC(stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t))); */
+   /*    RLE_AC(stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C); */
+   /*    i++; */
+   /*    /\* 1 Bloc Cr *\/ */
+   /*    diff_DC(stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t))); */
+   /*    RLE_AC(stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C); */
+   /*    i++; */
+   /* } */
 
    /* FREE */
 
@@ -180,10 +231,15 @@ int main(int argc, char **argv)
    free (dctBlocs);
    free (qzzBlocs);
 
-   free (freq_AC_Y);
-   free (freq_DC_Y);
-   free (freq_AC_C);
-   free (freq_DC_C);
+   free_huffman_table (table_DC_Y);
+   free_huffman_table (table_DC_C);
+   free_huffman_table (table_AC_Y);
+   free_huffman_table (table_AC_C);
+
+   /* free (freq_AC_Y); */
+   /* free (freq_DC_Y); */
+   /* free (freq_AC_C); */
+   /* free (freq_DC_C); */
 
    free_tfd (tfd);
    free_bitstream(stream);

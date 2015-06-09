@@ -2,8 +2,6 @@
 
 
 
-
-
 /*Recherche un symbole dans un tableau tab[256] */
 /*renvoie -1 si l'element n'y est pas, i si tab[i].abr->abr->symbole =symb  */
 
@@ -125,6 +123,7 @@ void insert_heap(struct elt *x, struct elt *heap,
 
    /*insertion à la fin du tas*/
    heap[ind].abr=malloc(sizeof(struct abr));
+   heap[ind].abr->est_feuille=true ;
    heap[ind].abr->symbole=x->abr ->symbole ;
    heap[ind].occ= x->occ ;
    ind++;// ind est l'indice de la 1e case vide du tas
@@ -149,7 +148,7 @@ struct elt best_elt(struct elt *heap, uint8_t ind){
       printf("tas vide \n");
    };
 
-   return heap[0].occ;
+   return heap[0];
 
 
 }
@@ -211,12 +210,13 @@ struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt ){
 
 
    /*Allocation du tas */
-   struct elt *heap=malloc(*nb_elt*sizeof(struct elt));
+   struct elt *heap=smalloc(*nb_elt*sizeof(struct elt));
 
 
    /* Remplissage du tas */
    for (uint8_t j=0; j<*nb_elt; j++){
       insert_heap(tab[j], heap, j, *nb_elt) ;
+
    }
 
    return heap ;
@@ -241,33 +241,33 @@ struct huff_table {
 
 
 
-struct abr *create_huffman_table(struct elt tab[256])
+struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
 {
-   uint8_t nb_elt;
-   struct elt *gauche ;
-   struct elt *droit ;
+
+   struct abr *gauche ;
+   struct abr *droit ;
    uint8_t sum_occ ;
    struct elt *pere ;
 
    /*Transformation du tableau en tas */
-   struct elt *heap=tab_to_heap( &tab,  &nb_elt);
+   struct elt *heap=tab_to_heap( &tab,  nb_elt);
 
    /*Tant que il reste des elt a traiter*/
-   while (nb_elt>0){
+   while (*nb_elt>0){
       sum_occ = 0 ;
 
       /*Fusion des deux meilleurs noeuds en un arbre*/
 
-      gauche=best_elt(heap, nb_elt);
-      sum_occ=gauche->occ ;
-      delete_elt(heap, &nb_elt);
-      nb_elt --;
+      gauche=best_elt(heap, *nb_elt).abr;
+      sum_occ=best_elt(heap, *nb_elt).occ ;
+      delete_elt(heap, nb_elt);
+      (*nb_elt) --;
 
 
-      droit =best_elt(heap, nb_elt);
-      sum_occ=droit->occ;
-      delete_elt(heap, &nb_elt);
-      nb_elt --;
+      droit =best_elt(heap, *nb_elt).abr;
+      sum_occ=best_elt(heap, *nb_elt).occ;
+      delete_elt(heap, nb_elt);
+      *(nb_elt) --;
 
       pere = smalloc(sizeof(struct elt));
       pere->abr->gauche=gauche ;
@@ -275,8 +275,8 @@ struct abr *create_huffman_table(struct elt tab[256])
       pere->occ=sum_occ ;
       pere->abr->est_feuille=false ;
 
-      insert_heap(pere, heap, nb_elt, nb_elt);
-      nb_elt ++;
+      insert_heap(pere, heap, *nb_elt, *nb_elt);
+      (*nb_elt) ++;
 
 
 
@@ -286,6 +286,15 @@ struct abr *create_huffman_table(struct elt tab[256])
 
    return (heap[0].abr);
 }
+
+
+void huffman_value(struct abr *abr, uint8_t symbole) {
+
+
+
+}
+
+
 
 void store_huffman_table(struct bitstream *stream, struct huff_table *ht)
 {

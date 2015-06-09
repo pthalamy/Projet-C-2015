@@ -11,8 +11,8 @@
 
 struct abr {
    uint8_t symbole ;
-   struct elt *gauche ;
-   struct elt *droit ;
+   struct abr *gauche ;
+   struct abr *droit ;
    bool est_feuille ;
 };
 
@@ -35,7 +35,7 @@ extern struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt);
 
 struct huff_table;
 
-extern struct abr *create_huffman_table(struct elt tab[256]);
+extern struct abr *create_huffman_table(struct elt tab[256], uint8_t *n);
 
 extern void store_huffman_table(struct bitstream *stream, struct huff_table *ht);
 

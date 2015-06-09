@@ -198,9 +198,9 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 for (uint8_t i =0; i<longueur_section-2 ; i++){
 	    read_nbytes(stream, 1, &buf, false);
-	    /* printf("%c", buf) ; */
+	    printf("%c", buf) ;
 	 }
-	    /* printf("\n") ; */
+	    printf("\n") ;
 	 break ;
 
       case DQT:			/* 0xdb */

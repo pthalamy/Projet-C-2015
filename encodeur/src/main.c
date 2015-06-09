@@ -137,6 +137,12 @@ int main(int argc, char **argv)
 
    /* HUFFMAN */
    printf ("\nHUFFMAN\n");
+
+   export_DHT(jfd, DC_Y_len, DC_Y_sym, DC_Y_NB_SYM, 0, 0);
+   export_DHT(jfd, DC_C_len, DC_C_sym, DC_C_NB_SYM, 0, 1);
+   export_DHT(jfd, AC_Y_len, AC_Y_sym, AC_Y_NB_SYM, 1, 2);
+   export_DHT(jfd, AC_C_len, AC_C_sym, AC_C_NB_SYM, 1, 3);
+
    struct huff_table *table_DC_Y = create_huffman_table(DC_Y_len, DC_Y_sym);
    /* affiche_huffman (table_DC_Y); */
    struct huff_table *table_AC_Y = create_huffman_table(AC_Y_len, AC_Y_sym);

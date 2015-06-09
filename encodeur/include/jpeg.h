@@ -27,6 +27,11 @@ extern void export_DQT(struct jpeg_file_desc *jfd,
 
 extern void export_SOF0(struct jpeg_file_desc *jfd);
 
+extern void export_DHT(struct jpeg_file_desc *jfd,
+		       const uint8_t codeLengths[16],
+		       const uint8_t *symboles,
+		       const uint8_t nbSym, uint8_t type, uint8_t indice);
+
 /* Ferme le fichier associé à la structure jpeg_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
 extern void close_jpeg_file(struct jpeg_file_desc *jfd);

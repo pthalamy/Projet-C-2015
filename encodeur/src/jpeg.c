@@ -135,6 +135,29 @@ void export_SOF0(struct jpeg_file_desc *jfd)
    }
 }
 
+
+void export_DHT(struct jpeg_file_desc *jfd,
+		const uint8_t codeLengths[16],
+		const uint8_t *symboles,
+		const uint8_t nbSym, uint8_t type, uint8_t indice)
+{
+   printf ("-> DHT: \n");
+   write_bitstream (jfd->stream, 16, DHT);
+
+   uint16_t longueur = 2 + 1 + 16 + nbSym;
+   write_bitstream (jfd->stream, 16, longueur);
+
+   write_bitstream (jfd->stream, 3, 0); /* 3 zeros */
+   write_bitstream (jfd->stream, 1, type); /* DC = 0; AC = 1 */
+   write_bitstream (jfd->stream, 4, indice); /* ic */
+
+   for (uint8_t i = 0; i < 16; i++)
+      write_bitstream (jfd->stream, 8, codeLengths[i]);
+
+   for (uint8_t i = 0; i < nbSym; i++)
+      write_bitstream (jfd->stream, 8, symboles[i]);
+}
+
 void close_jpeg_file(struct jpeg_file_desc *jfd)
 {
    if (jfd) {

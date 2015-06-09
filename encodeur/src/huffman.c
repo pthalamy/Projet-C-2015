@@ -26,10 +26,10 @@ int32_t recherche_tab(struct elt *tab[256], uint8_t symb ){
 
 
 
-/*Parcours d'un bloc et stockage des symboles et de leurs ocurrences dans un tableau AC et un tableau DC */
+/*Parcours d'un bloc et stockage des symboles et de leurs occurrences dans un tableau AC et un tableau DC */
 void init_freq(int32_t bloc[64],
-	       struct elt *freq_DC[256], uint8_t ind_DC,
-	       struct elt *freq_AC[256], uint8_t ind_AC,
+	       struct elt *freq_DC[256], uint8_t *ind_DC,
+	       struct elt *freq_AC[256], uint8_t *ind_AC,
 	       int32_t  *pred_DC){
 
 /* Maj de freq_DC */
@@ -38,9 +38,9 @@ void init_freq(int32_t bloc[64],
    uint8_t mag = magnitude(dc);
 
    if (recherche_tab( freq_DC, (uint8_t)dc) == -1 ){
-      freq_DC[ind_DC]->abr->symbole=dc ;
-      freq_DC[ind_DC]->occ =1 ;
-      ind_DC ++;
+      freq_DC[*ind_DC]->abr->symbole=dc ;
+      freq_DC[*ind_DC]->occ =1 ;
+      (*ind_DC) ++;
    } else {
       freq_DC[recherche_tab(freq_DC, (uint8_t)dc)]->occ++ ;
    }
@@ -84,9 +84,9 @@ void init_freq(int32_t bloc[64],
 
       /*Maj de freq_AC*/
       if (recherche_tab(freq_AC, val)==-1){
-	 freq_AC[ind_AC]->abr->symbole=val ;
-	 freq_AC[ind_AC]->occ= 1 ;
-	 ind_AC++;
+	 freq_AC[*ind_AC]->abr->symbole=val ;
+	 freq_AC[*ind_AC]->occ= 1 ;
+	 (*ind_AC)++;
       } else {
 	 freq_AC[(uint8_t)recherche_tab(freq_AC, val)]->occ++;
       }

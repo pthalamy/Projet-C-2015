@@ -140,9 +140,8 @@ void insert_heap(struct elt *x, struct elt *heap,
 
    uint8_t i =ind ;
    if (ind >taille_heap){
-      printf("Tas plein !");
-   };
-
+      printf("Tas plein !\n");
+   }
    /*insertion à la fin du tas*/
    heap[ind].abr=malloc(sizeof(struct abr));
    heap[ind].abr->est_feuille=true ;
@@ -179,8 +178,8 @@ struct elt best_elt(struct elt *heap, uint8_t ind){
 void delete_elt(struct elt *heap, uint8_t *ind){
 
    if (*ind==0){
-      printf("Tas vide :impossible de supprimer un élément ");
-   };
+      printf("Tas vide :impossible de supprimer un élément\n");
+   }
 
    /* Derniere feuille passe en racine */
    swap_heap(&heap[0], &heap[*ind-1]) ;
@@ -193,7 +192,8 @@ void delete_elt(struct elt *heap, uint8_t *ind){
    uint8_t i=0 ;
    uint8_t min ;
    /* Calcul du fils avec la plus faible occurrence */
-   while (i < (*ind-1)/2){
+   while (!heap[i].abr->est_feuille) {
+      /* printf("Tas pas plein %d %d !\n", *ind, i); */
       if (heap[2*i].occ > heap[2*i+1].occ){
 	 min=2*i+1;
       } else {
@@ -205,12 +205,9 @@ void delete_elt(struct elt *heap, uint8_t *ind){
 	 i=min;
       }
    }
-
 }
 
 /*Transformation du tableau en file de priorité */
-
-
 struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt ){
 
    /* Création d'un tas de bonne taille */
@@ -265,7 +262,6 @@ struct huff_table {
 
 struct abr *create_huffman_table(struct elt *tab[256], uint8_t *nb_elt)
 {
-   printf ("in1\n");
    struct abr *gauche ;
    struct abr *droit ;
    uint8_t sum_occ ;
@@ -274,11 +270,8 @@ struct abr *create_huffman_table(struct elt *tab[256], uint8_t *nb_elt)
    /*Transformation du tableau en tas */
    struct elt *heap = tab_to_heap(tab,  nb_elt);
 
-   printf ("in2\n");
-
    /*Tant que il reste des elt a traiter*/
    while (*nb_elt > 1){
-      printf ("nb_elt: %d\n", *nb_elt);
 
       sum_occ = 0 ;
 
@@ -302,8 +295,6 @@ struct abr *create_huffman_table(struct elt *tab[256], uint8_t *nb_elt)
       insert_heap(pere, heap, *nb_elt, *nb_elt);
       (*nb_elt)++;
    }
-
-   printf ("quasi out\n");
 
    /*Désallocation*/
    free_heap(heap);

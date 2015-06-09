@@ -132,29 +132,36 @@ int main(int argc, char **argv)
 
    /* HUFFMAN */
    printf ("\nHUFFMAN\n");
-   struct elt **freq_DC = scalloc (256, sizeof(struct elt*));
-   struct elt **freq_AC = scalloc (256, sizeof(struct elt*));
-   uint8_t ind_DC;
-   uint8_t ind_AC;
-   int32_t pred_DC[3] = {0, 0, 0};
+   struct elt **freq_DC_Y = scalloc (256, sizeof(struct elt*));
+   struct elt **freq_AC_Y = scalloc (256, sizeof(struct elt*));
+   struct elt **freq_DC_C = scalloc (256, sizeof(struct elt*));
+   struct elt **freq_AC_C = scalloc (256, sizeof(struct elt*));
+   uint8_t ind_DC_Y;
+   uint8_t ind_AC_Y;
+   uint8_t ind_DC_C;
+   uint8_t ind_AC_C;
+   int32_t pred_DC_Y;
+   int32_t pred_DC_C;
 
    for (uint32_t i = 0; i < nbBlocs; ) {
       /* 4 Blocs de Luminance */
       for (uint32_t j = i; j < i + 4; j++) {
 	 /* print_int32_t_block (qzzBlocs + j * (64 * sizeof(int32_t)), j); */
-   	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[0]);
+   	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC_Y, &ind_DC_Y, freq_AC_Y, &ind_AC_Y, &pred_DC_Y);
       }
       i += 4;
       /* 1 Bloc Cb */
-      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[1]);
+      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C);
       i++;
       /* 1 Bloc Cr */
-      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[2]);
+      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC_C, &ind_DC_C, freq_AC_C, &ind_AC_C, &pred_DC_C);
       i++;
    }
 
-   struct abr *table_DC = create_huffman_table(freq_DC, &ind_DC);
-   struct abr *table_AC = create_huffman_table(freq_AC, &ind_AC);
+   struct abr *table_DC_Y = create_huffman_table(freq_DC_Y, &ind_DC_Y);
+   struct abr *table_AC_Y = create_huffman_table(freq_AC_Y, &ind_AC_Y);
+   struct abr *table_DC_C = create_huffman_table(freq_DC_C, &ind_DC_C);
+   struct abr *table_AC_C = create_huffman_table(freq_AC_C, &ind_AC_C);
 
    /* FREE */
 
@@ -173,8 +180,10 @@ int main(int argc, char **argv)
    free (dctBlocs);
    free (qzzBlocs);
 
-   free (freq_AC);
-   free (freq_DC);
+   free (freq_AC_Y);
+   free (freq_DC_Y);
+   free (freq_AC_C);
+   free (freq_DC_C);
 
    free_tfd (tfd);
    free_bitstream(stream);

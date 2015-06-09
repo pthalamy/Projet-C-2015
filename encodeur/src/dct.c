@@ -30,7 +30,7 @@ void dct(uint8_t in[64], int32_t out[64])
 
 	 for (uint32_t i=0; i<8; i++){
 	    for (uint32_t j=0; j<8; j++){
-	       S+= C(u)*C(v)*COS(i,u)*COS(j,v)*in[8*i+j];
+	       S+= C(u)*C(v)*COS(i,u)*COS(j,v)*(in[8*i+j] - 128);
 	    }
 	 }
 

@@ -25,8 +25,8 @@ struct elt {
 
 /* Parcours d'un bloc, stockage des symboles dans un tableau*/
 void init_freq(int32_t bloc[64],
-	       struct elt *freq_DC[256], uint8_t ind_DC,
-	       struct elt *freq_AC[256], uint8_t ind_AC,
+	       struct elt *freq_DC[256], uint8_t *ind_DC,
+	       struct elt *freq_AC[256], uint8_t *ind_AC,
 	       int32_t  *pred_DC);
 
 

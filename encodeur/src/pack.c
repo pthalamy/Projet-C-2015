@@ -39,9 +39,9 @@ void diff_DC(struct bitstream *stream,
 
    /*Ecriture du code de la magnitude dans bitstream */
 
-   uint8_t *code_mag;
+   uint8_t *code_mag=0;
    uint8_t nb_bits ;
-   huffman_value( table_DC,mag, code_mag, &nb_bits);
+   huffman_value(table_DC,mag, code_mag, &nb_bits);
    write_bitstream(stream, nb_bits, *code_mag);
 
    /* Ecriture de l'indice de val dans bitstream*/
@@ -64,7 +64,8 @@ void RLE_AC(struct bitstream *stream,
    uint8_t val ;
    uint8_t mag ;
    uint8_t der =1;
-
+   uint8_t *code=0 ;
+   uint8_t *nb_bits=0 ;
    while (i<63){
 
       // si on a un zéro on passe au coeff suivant en incrémentant le compteur
@@ -81,9 +82,8 @@ void RLE_AC(struct bitstream *stream,
 	 /*calcul du symbole (nb zeros + mag) */
 	 mag=magnitude(bloc[i]);
 	 val= (nb_zeros <<4)||(0x0F & mag);
-	 //val=huffman(mag, table_AC);
-	 int32_t mag_val=magnitude(val);
-	 write_bitstream(stream, mag_val, val) ;
+	 huffman_value(table_AC, val, code, nb_bits);
+	 write_bitstream(stream, *nb_bits, (uint32_t )*code) ;
 
 	 /*calcul indice de bloc[i]*/
 	 val=val_to_mag(bloc[i], mag);

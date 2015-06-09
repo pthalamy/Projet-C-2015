@@ -34,7 +34,7 @@ int main(int argc, char **argv)
    struct bitstream *stream = create_bitstream(output_name);
    if (!stream) {
       fprintf(stderr, "Impossible de créer le bitstream.\n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* TIFF */
@@ -44,11 +44,12 @@ int main(int argc, char **argv)
    struct tiff_file_desc *tfd = create_tfd_and_read_header (argv[1]);
    if (!tfd) {
       fprintf(stderr, "Impossible d'ouvrir le fichier TIFF. Le fichier spécifié n'existe pas.\n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* Lecure de l'IFD du fichier TIFF */
-   read_TIFF_ifd (tfd);
+   uint32_t width, height;
+   read_TIFF_ifd (tfd, &height, &width);
 
    /* Lecture des données des l'image et découpage en MCU 16x16 */
    get_tiff_scan_data (tfd);
@@ -56,6 +57,15 @@ int main(int argc, char **argv)
    uint32_t **MCUScan = split_scan_into_16x16_MCU(tfd, &nbMCUH, &nbMCUV);
    uint32_t nbMCU_scan = nbMCUV * nbMCUH;
    printf ("nbMCU_scan: %d\n", nbMCU_scan);
+
+   /* INIT JPEG */
+   printf ("\nINIT JPEG\n");
+   /* Initialisation du jpeg de sortie */
+   struct jpeg_file_desc *jfd = init_jpeg_file (stream, output_name, 0, 0, 0, 0);
+   if (!jfd) {
+      fprintf(stderr, "Impossible de créer le fichier de sortie.\n");
+      exit (EXIT_FAILURE);
+   }
 
    /* YCbCr CONVERSION */
    printf ("\nYCbCr CONVERSION\n");
@@ -191,7 +201,7 @@ int main(int argc, char **argv)
    /* struct abr *table_AC_C = create_huffman_table(freq_AC_C, &ind_AC_C); */
    /* printf ("AC C:\n"); */
    /* affiche_huffman (table_DC_Y); */
-   /* exit (1); */
+   /* exit (EXIT_FAILURE); */
 
    /* /\* PACK *\/ */
    /* printf ("\nPACK\n"); */
@@ -213,6 +223,8 @@ int main(int argc, char **argv)
    /*    RLE_AC(stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C); */
    /*    i++; */
    /* } */
+
+   close_jpeg_file (stream, jfd);
 
    /* FREE */
 

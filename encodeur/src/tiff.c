@@ -161,7 +161,7 @@ struct tiff_file_desc *create_tfd_and_read_header (const char *file_name)
    return tfd;
 }
 
-void read_TIFF_ifd(struct tiff_file_desc *tfd)
+void read_TIFF_ifd(struct tiff_file_desc *tfd, uint32_t *height, uint32_t *width)
 {
    /* Nombre d'entrées dans l'IFD */
    uint16_t nb_entries;
@@ -180,11 +180,13 @@ void read_TIFF_ifd(struct tiff_file_desc *tfd)
       case IMAGEWIDTH:
 	 /* printf ("IMAGEWIDTH:\n"); */
 	 tfd->imageWidth = val;
+	 *width = val;
 	 /* printf ("\timageWidth: %#x <=> %d\n", tfd->imageWidth, tfd->imageWidth); */
 	 break;
       case IMAGELENGTH:
 	 /* printf ("IMAGELENGTH:\n"); */
 	 tfd->imageLength = val;
+	 *height = val;
 	 /* printf ("\timageLength: %#x <=> %d\n", tfd->imageLength, tfd->imageLength); */
 	 break;
       case BITS_PER_SAMPLE:

@@ -36,5 +36,5 @@ encodeur/*.o
 *~
 
 # Project specific files
-*.tiff
+tests/*.tiff
 jpeg2tiff

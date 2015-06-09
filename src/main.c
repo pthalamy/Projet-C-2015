@@ -14,6 +14,22 @@
 
 /* MARQUEURS DE SECTIOn */
 #define APP0 0xe0
+#define APP1 0xe1
+#define APP2 0xe2
+#define APP3 0xe3
+#define APP4 0xe4
+#define APP5 0xe5
+#define APP6 0xe6
+#define APP7 0xe7
+#define APP8 0xe8
+#define APP9 0xe9
+#define APP10 0xea
+#define APP11 0xeb
+#define APP12 0xec
+#define APP13 0xed
+#define APP14 0xee
+#define APP15 0xef
+
 #define COM 0xfe
 #define DQT 0xdb
 #define SOF0 0xc0
@@ -414,8 +430,13 @@ int main(int argc, char *argv[]){
 	 return 0;
 
       default :
-	 fprintf(stderr, "erreur: marqueur de section non reconnu: %#x\n", marqueur);
-	 exit (1);
+	 printf ("Section non implémentée: %#x\n", marqueur);
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 longueur_section -= 2;
+	 /* Passage à la section suivante */
+	 skip_bitstream_until (stream, 0xff);
+	 /* fprintf(stderr, "erreur: marqueur de section non reconnu: %#x\n", marqueur); */
+	 /* exit (1); */
       }
    }
 

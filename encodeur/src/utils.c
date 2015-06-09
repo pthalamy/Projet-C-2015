@@ -62,7 +62,7 @@ uint16_t le16_to_cpu(const uint16_t v)
       return v;
 }
 
-void print_block(uint32_t *bloc, uint32_t num_bloc)
+void print_uint8_t_block(uint8_t *bloc, uint32_t num_bloc)
 {
    printf ("bloc numéro %d\n", num_bloc);
    for (uint32_t i = 0; i < 8; i++) {
@@ -70,6 +70,64 @@ void print_block(uint32_t *bloc, uint32_t num_bloc)
 	 printf ("%d ", bloc[8*i + j]);
       }
       printf ("\n ");
+   }
+   printf ("\n");
+}
+
+void print_uint32_t_block(uint32_t *bloc, uint32_t num_bloc)
+{
+   printf ("bloc numéro %d\n", num_bloc);
+   for (uint32_t i = 0; i < 8; i++) {
+      for (uint32_t j = 0; j < 8; j++) {
+	 printf ("%d ", bloc[8*i + j]);
+      }
+      printf ("\n ");
+   }
+   printf ("\n");
+}
+
+void print_int32_t_block(int32_t *bloc, uint32_t num_bloc)
+{
+   printf ("bloc numéro %d\n", num_bloc);
+   for (uint32_t i = 0; i < 8; i++) {
+      for (uint32_t j = 0; j < 8; j++) {
+	 printf ("%d ", bloc[8*i + j]);
+      }
+      printf ("\n ");
+   }
+   printf ("\n");
+}
+
+
+void print_int8_t_mcu(uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
+{
+   printf ("mcu numéro %d\n", num_mcu);
+   for (uint32_t i = 0; i < (uint32_t)(64*sfv*sfh); i++) {
+      if (!(i % (sfh * 8)))
+	 printf ("\n");
+      printf ("%d ", mcu[i]);
+   }
+   printf ("\n");
+}
+
+void print_uint32_t_mcu(uint32_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
+{
+   printf ("mcu numéro %d\n", num_mcu);
+   for (uint32_t i = 0; i < (uint32_t)(64*sfv*sfh); i++) {
+      if (!(i % (sfh * 8)))
+	 printf ("\n");
+      printf ("%d ", mcu[i]);
+   }
+   printf ("\n");
+}
+
+void print_int32_t_mcu(int32_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
+{
+   printf ("mcu numéro %d\n", num_mcu);
+   for (uint32_t i = 0; i < (uint32_t)(64*sfv*sfh); i++) {
+      if (!(i % (sfh * 8)))
+	 printf ("\n");
+      printf ("%d ", mcu[i]);
    }
    printf ("\n");
 }

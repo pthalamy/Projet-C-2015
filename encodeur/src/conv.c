@@ -38,7 +38,7 @@ uint8_t to_YCbCr(enum YCbCr c, uint32_t R, uint32_t G, uint32_t B)
    return res_8;
 }
 
-void RGB_to_YCbCr(uint8_t *mcu_YCbCr[3], uint32_t *mcu_RGB, uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+void RGB_to_YCbCr(uint32_t *mcu_RGB, uint32_t nb_blocks_h, uint32_t nb_blocks_v, uint8_t *mcu_YCbCr[3])
 {
 
    uint8_t R;

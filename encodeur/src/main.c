@@ -55,6 +55,7 @@ int main(int argc, char **argv)
    uint32_t nbMCUH, nbMCUV;
    uint32_t **MCUScan = split_scan_into_16x16_MCU(tfd, &nbMCUH, &nbMCUV);
    uint32_t nbMCU_scan = nbMCUV * nbMCUH;
+   printf ("nbMCU_scan: %d\n", nbMCU_scan);
 
    /* YCbCr CONVERSION */
    printf ("\nYCbCr CONVERSION\n");
@@ -72,12 +73,12 @@ int main(int argc, char **argv)
       /* print_mcu (MCU_YCbCr[i][2], i, 2, 2); */
    }
 
-
    /* DOWNSAMPLING 4:2:0 */
    printf ("\nDOWNSAMPLING 4:2:0\n");
 
    /* 4 blocs pour y, 1 pour Cb, 1 pour Cr = 6 blocs 8*8 */
    uint32_t nbBlocs = 6 * nbMCU_scan;
+   printf ("nbBlocs: %d\n", nbBlocs);
    uint8_t *downBlocs = smalloc (nbBlocs * 64 * sizeof(uint8_t));
 
    uint32_t blocId = 0;
@@ -128,6 +129,30 @@ int main(int argc, char **argv)
       i++;
    }
 
+   /* HUFFMAN */
+   printf ("\nHUFFMAN\n");
+   struct elt **freq_DC = scalloc (256, sizeof(struct elt*));
+   struct elt **freq_AC = scalloc (256, sizeof(struct elt*));
+   uint8_t ind_DC;
+   uint8_t ind_AC;
+   int32_t pred_DC[3] = {0, 0, 0};
+
+   for (uint32_t i = 0; i < nbBlocs; ) {
+      /* 4 Blocs de Luminance */
+      for (uint32_t j = i; j < i + 4; j++)
+   	 init_freq(qzzBlocs + j * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[0]);
+      i += 4;
+      /* 1 Bloc Cb */
+      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[1]);
+      i++;
+      /* 1 Bloc Cr */
+      init_freq(qzzBlocs + i * (64 * sizeof(int32_t)), freq_DC, &ind_DC, freq_AC, &ind_AC, &pred_DC[2]);
+      i++;
+   }
+
+   /* struct abr *table_DC = create_huffman_table(freq_DC, &int_DC); */
+   /* struct abr *table_AC = create_huffman_table(freq_DC, &int_DC); */
+
    /* FREE */
 
    for (uint32_t i = 0; i < nbMCU_scan; i++)
@@ -144,6 +169,9 @@ int main(int argc, char **argv)
    free (downBlocs);
    free (dctBlocs);
    free (qzzBlocs);
+
+   free (freq_AC);
+   free (freq_DC);
 
    free_tfd (tfd);
    free_bitstream(stream);

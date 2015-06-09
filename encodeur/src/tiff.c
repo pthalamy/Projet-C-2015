@@ -30,7 +30,6 @@
 #define BPS_OFFSET 0x0000009e
 #define NO_COMPRESSION 0x10000
 #define RGB_IMAGE 0x20000
-#define BIG_ENDIAN 0x4d4d
 #define TIFF_ID 0x002a
 #define SPP_3 0x3
 #define X_RES_OFFSET 0xa4

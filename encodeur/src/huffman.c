@@ -261,13 +261,13 @@ struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
       gauche=best_elt(heap, *nb_elt).abr;
       sum_occ=best_elt(heap, *nb_elt).occ ;
       delete_elt(heap, nb_elt);
-      (*nb_elt) --;
+      (*nb_elt)--;
 
 
       droit =best_elt(heap, *nb_elt).abr;
       sum_occ=best_elt(heap, *nb_elt).occ;
       delete_elt(heap, nb_elt);
-      *(nb_elt) --;
+      (*nb_elt)--;
 
       pere = smalloc(sizeof(struct elt));
       pere->abr->gauche=gauche ;
@@ -276,7 +276,7 @@ struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
       pere->abr->est_feuille=false ;
 
       insert_heap(pere, heap, *nb_elt, *nb_elt);
-      (*nb_elt) ++;
+      (*nb_elt)++;
 
 
 
@@ -288,8 +288,41 @@ struct abr *create_huffman_table(struct elt tab[256], uint8_t *nb_elt)
 }
 
 
-void huffman_value(struct abr *abr, uint8_t symbole) {
+bool recherche_symbole(struct abr *abr, uint8_t symbole){
+   if (abr->symbole==symbole){
+      return true;
+   } else {
+      if(recherche_symbole(abr->gauche, symbole)){
+	 return true ;
+      }
+      else if (recherche_symbole(abr->droit, symbole)){
+	 return true ;
+      }
+      else {
 
+	 return false ;
+      }
+   }
+
+
+
+} ;
+
+void huffman_value(struct abr *abr, uint8_t symbole, uint8_t *code, uint8_t *nb_bits) {
+
+   *nb_bits =0 ;
+
+   if (recherche_symbole(abr->gauche,symbole)){
+      *code=((*code)<<1 | (0x00) );
+      (*nb_bits)++;
+   }
+   else if (recherche_symbole(abr->droit,symbole)){
+      *code=((*code)<<1 | (0x01) );
+      (*nb_bits)++;
+   }
+   else {
+      printf("Recherche infructueuse su symbole %i dans l'arbre \n", symbole);
+   }
 
 
 }

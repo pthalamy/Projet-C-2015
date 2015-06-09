@@ -59,7 +59,6 @@ void loeffler (float  in[8], float out[8])
 /* LOEFFLER IDCT */
 void idct_block(int32_t in[64], uint8_t out[64])
 {
-   printf ("idct loeffler\n");
    float matrix[64];
    float tmp_vector[8];
    float tmp[8];
@@ -105,8 +104,6 @@ double C(int32_t xi)
 /* BASIC IDCT */
 void idct_block(int32_t in[64], uint8_t out[64])
 {
-   printf ("idct basique\n");
-
    for (uint32_t i = 0; i < 8; i++) {
       for (uint32_t j = 0; j < 8; j++) {
 	 double sum = 0;

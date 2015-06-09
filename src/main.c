@@ -617,7 +617,7 @@ void print_block(uint8_t *bloc, uint32_t num_bloc)
 void print_mcu(uint8_t *mcu, uint32_t num_mcu, uint8_t sfh, uint8_t sfv)
 {
    printf ("mcu numéro %d\n", num_mcu);
-   for (uint32_t i = 0; i < 64*sfv*sfh; i++) {
+   for (uint32_t i = 0; i < (uint32_t)(64*sfv*sfh); i++) {
       if (!(i % (sfh * 8)))
 	 printf ("\n");
       printf ("%d ", mcu[i]);

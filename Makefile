@@ -11,7 +11,7 @@ TEST_DIR = tests
 CC = gcc
 LD = gcc
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -O0 -Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -O0 -Wextra -g # -DLOEFFLER -O3
 LDFLAGS = -lm
 
 # Liste des objets encadrants

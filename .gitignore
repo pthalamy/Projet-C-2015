@@ -33,6 +33,7 @@ obj/*.o
 
 # Temporary files
 *~
+*/.DS_Store
 
 # Project specific files
 *.tiff

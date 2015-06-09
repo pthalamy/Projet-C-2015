@@ -64,10 +64,10 @@ $(NEW_OBJ_DIR)/main.o: $(SRC_DIR)/main.c
 
 # Décodage des images de test
 $(TEST_DIR)/%.tiff: $(TEST_DIR)/%.jpeg jpeg2tiff
-	./jpeg2tiff $<
+	time ./jpeg2tiff $<
 
 $(TEST_DIR)/%.tiff: $(TEST_DIR)/%.jpg jpeg2tiff
-	./jpeg2tiff $<
+	time ./jpeg2tiff $<
 
 .PHONY: clean realclean tests
 tests: $(TEST_OUTPUTS)

@@ -76,7 +76,7 @@ int main(int argc, char *argv[]){
    /* vérification de l'entrée */
    if ( argc != 2 ) {
       fprintf(stderr, "Veuillez entrer le fichier JPEG à décoder en argument. \n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* Vérification de la validité du nom et création du nom du fichier de sortie */
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]){
    struct bitstream *stream = create_bitstream(argv[1]);
    if (!stream) {
       fprintf(stderr, "Impossible de créer le bitstream. Le fichier spécifié n'existe pas.\n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* Variables de table de Huffman */
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]){
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
       fprintf(stderr, "Le fichier ne commence pas par un SOI mais 0x%x !\n", buf);
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* Lecture des sections jusqu'à récupération des blocs */
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 1, (uint32_t*)&jfif[4], false);
 	 if (strcmp (jfif, "JFIF")) {
 	    fprintf (stderr, "erreur APP0 : JFIF absent <= %s\n", jfif);
-	    exit (1);
+	    exit (EXIT_FAILURE);
 	 }
 
 	 /* Lecture des données additionnelles */
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]){
 
 	 if (!unicite){
 	    /* printf("erreur: plusieurs définitions des tablesde quantification \n"); */
-	    exit (1);
+	    exit (EXIT_FAILURE);
 	 }
 
 	 //* calcul du nombre de tables de la section */
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]){
 	    if (zeros) {
 	       fprintf (stderr, " erreur: Les 3 premiers bits d'information de"
 			" la table de Huffman doivent valoir 0 /= %#x\n", zeros);
-	       exit (1);
+	       exit (EXIT_FAILURE);
 	    }
 
 	    uint32_t type;
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]){
 	    /* printf (" indice: %d\n", indice); */
 	    if (indice > 3) {
 	       fprintf (stderr, " erreur: L'indice de la table de Huffman ne peut être %d > 3\n", indice);
-	       exit (1);
+	       exit (EXIT_FAILURE);
 	    }
 
 	    nb_byte_read++;
@@ -430,13 +430,13 @@ int main(int argc, char *argv[]){
 	 return 0;
 
       default :
-	 printf ("Section non implémentée: %#x\n", marqueur);
-	 read_nbytes(stream, 2, &longueur_section, false);
-	 longueur_section -= 2;
+	 fprintf (stderr, "\tSection non implémentée: %#x\n", marqueur);
+	 /* read_nbytes(stream, 2, &longueur_section, false); */
+	 /* longueur_section -= 2; */
 	 /* Passage à la section suivante */
 	 skip_bitstream_until (stream, 0xff);
 	 /* fprintf(stderr, "erreur: marqueur de section non reconnu: %#x\n", marqueur); */
-	 /* exit (1); */
+	 /* exit (EXIT_FAILURE); */
       }
    }
 
@@ -609,7 +609,7 @@ char *check_and_gen_name(const char *input_name)
 
    if (strcmp(ext, ".jpeg") && strcmp(ext, ".jpg")) {
       fprintf(stderr, "erreur: L'extension de fichier n'est ni .jpeg, ni .jpg !\n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* On remplace l'extension .jp(e)g par .tiff */
@@ -673,7 +673,7 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
 	 return i;
 
    fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
-   exit (1);
+   exit (EXIT_FAILURE);
 }
 
 uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)

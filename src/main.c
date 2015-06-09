@@ -414,7 +414,7 @@ int main(int argc, char *argv[]){
 	 return 0;
 
       default :
-	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
+	 fprintf(stderr, "erreur: marqueur de section non reconnu: %#x\n", marqueur);
 	 exit (1);
       }
    }

@@ -5,6 +5,7 @@ NEW_OBJ_DIR = obj
 SRC_DIR = src
 INC_DIR = include
 TEST_DIR = tests
+TESTSUITE_DIR = tests/imagetestsuite/jpg
 
 # Options de compilation
 
@@ -43,6 +44,11 @@ TEST_FILES = $(wildcard $(TEST_DIR)/*.jp*)
 TEST_OUTPUTS1 = $(TEST_FILES:.jpeg=.tiff)
 TEST_OUTPUTS += $(TEST_OUTPUTS1:.jpg=.tiff)
 
+# imagetestsuite
+TESTSUITE_FILES = $(wildcard $(TESTSUITE_DIR)/*.jp*)
+TESTSUITE_OUTPUTS1 = $(TESTSUITE_FILES:.jpeg=.tiff)
+TESTSUITE_OUTPUTS += $(TESTSUITE_OUTPUTS1:.jpg=.tiff)
+
 all: jpeg2tiff
 
 # Edition de lien des executables
@@ -66,8 +72,10 @@ $(TEST_DIR)/%.tiff: $(TEST_DIR)/%.jpg jpeg2tiff
 .PHONY: clean realclean tests
 tests: $(TEST_OUTPUTS)
 
+testsuite: $(TESTSUITE_OUTPUTS)
+
 clean:
 	rm -f jpeg2tiff $(NEW_OBJ_FILES)
 
 realclean: clean
-	rm -f tests/*.tiff
+	rm -f tests/*.tiff tests/imagetestsuite/jpg/*.tiff

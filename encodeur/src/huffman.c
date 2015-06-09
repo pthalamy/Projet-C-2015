@@ -316,6 +316,11 @@ bool recherche_symbole(struct abr *abr, uint8_t symbole){
    if (abr->symbole==symbole){
       return true;
    } else {
+
+      if(abr->est_feuille){
+	 return false ;
+      }
+
       if(recherche_symbole(abr->gauche, symbole)){
 	 return true ;
       }

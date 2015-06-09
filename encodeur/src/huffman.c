@@ -1,21 +1,19 @@
 #include "pack.h"
 #include "huffman.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-struct elt {
-   uint8_t symbole ;
-   uint8_t occ ;
 
-};
+
 
 /*Recherche un symbole dans un tableau tab[256] */
-/*renvoie -1 si l'element n'y est pas, i si tab[i].symbole =symb  */
+/*renvoie -1 si l'element n'y est pas, i si tab[i].abr->abr->symbole =symb  */
 
-int32_t recherche_tab(struct elt tab[256], uint8_t symb ){
+int32_t recherche_tab(struct elt *tab[256], uint8_t symb ){
    bool trouve=false ;
    int32_t i  =0 ;
    while ((! trouve) & (i<256)){
-      if (tab[i].symbole==symb) {
+      if (tab[i]->abr->symbole==symb) {
 	 trouve=true;
       } else {
 	 i++;
@@ -33,7 +31,10 @@ int32_t recherche_tab(struct elt tab[256], uint8_t symb ){
 
 
 /*Parcours d'un bloc et stockage des symboles et de leurs ocurrences dans un tableau AC et un tableau DC */
-void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256], int32_t  *pred_DC, uint8_t ind_DC, uint8_t ind_AC){
+void init_freq(int32_t bloc[64],
+	       struct elt *freq_DC[256], uint8_t ind_DC,
+	       struct elt *freq_AC[256], uint8_t ind_AC,
+	       int32_t  *pred_DC){
 
 /* Maj de freq_DC */
 
@@ -41,11 +42,11 @@ void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256
    uint8_t mag = magnitude(dc);
 
    if (recherche_tab( freq_DC, (uint8_t)dc) == -1 ){
-      freq_DC[ind_DC].symbole=dc ;
-      freq_DC[ind_DC].occ =1 ;
+      freq_DC[ind_DC]->abr->symbole=dc ;
+      freq_DC[ind_DC]->occ =1 ;
       ind_DC ++;
    } else {
-      freq_DC[recherche_tab(freq_DC, (uint8_t)dc)].occ++ ;
+      freq_DC[recherche_tab(freq_DC, (uint8_t)dc)]->occ++ ;
    }
 
    *pred_DC =dc ;
@@ -87,31 +88,34 @@ void init_freq(int32_t bloc[64], struct elt freq_DC[256], struct elt freq_AC[256
 
       /*Maj de freq_AC*/
       if (recherche_tab(freq_AC, val)==-1){
-	 freq_AC[ind_AC].symbole=val ;
-	 freq_AC[ind_AC].occ= 1 ;
+	 freq_AC[ind_AC]->abr->symbole=val ;
+	 freq_AC[ind_AC]->occ= 1 ;
 	 ind_AC++;
       } else {
-	 freq_AC[(uint8_t)recherche_tab(freq_AC, val)].occ++;
+	 freq_AC[(uint8_t)recherche_tab(freq_AC, val)]->occ++;
       }
    }
 }
 
 
+/////////////////////////////////////////////////////////////////
+////////    FONCTIONS SUR LES TAS /////////////
+
 /*Echange deux éléments d'un tas*/
 void swap_heap(struct elt *a, struct elt *b){
    struct elt *temp=malloc (sizeof(struct elt));
    temp->occ= a->occ;
-   temp->symbole=a->symbole ;
+   temp->abr->symbole=a->abr->symbole ;
    a->occ=b->occ ;
-   a->symbole=b->symbole ;
+   a->abr->symbole=b->abr->symbole ;
    b->occ=temp->occ;
-   b->symbole=temp->symbole ;
+   b->abr->symbole=temp->abr->symbole ;
 
    free(temp);
 }
 
 /*Insertion d'un élément dans le tas */
-void insert_heap(struct elt x, struct elt *heap,
+void insert_heap(struct elt *x, struct elt *heap,
 		 uint8_t ind, uint8_t taille_heap){
 
    uint8_t i =ind ;
@@ -120,8 +124,8 @@ void insert_heap(struct elt x, struct elt *heap,
    };
 
    /*insertion à la fin du tas*/
-   heap[ind].symbole=x.symbole ;
-   heap[ind].occ= x.occ ;
+   heap[ind].abr->symbole=x->abr ->symbole ;
+   heap[ind].occ= x->occ ;
    ind++;// ind est l'indice de la 1e case vide du tas
 
    /*tant que le champ occ du père est supérieur à celui de x on les échange */
@@ -139,13 +143,13 @@ void insert_heap(struct elt x, struct elt *heap,
 
 
 /*Recupère l'élément de plus faible occurrence*/
-struct elt best_elt(struct elt *heap, uint8_t ind){
+struct elt *best_elt(struct elt *heap, uint8_t ind){
 
    if (ind==0){
       printf("tas vide \n");
    };
 
-   return heap[0];
+   return &heap[0];
 
 
 }
@@ -184,6 +188,7 @@ void delete_elt(struct elt *heap, uint8_t ind){
 }
 
 /*Transformation du tableau en file de priorité */
+
 struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
 
   /* Création d'un tas de bonne taille */
@@ -200,8 +205,12 @@ struct elt *tab_to_heap(struct elt tab[256], uint8_t *nb_elt ){
    }
 
    /*Allocation du tas */
-   struct elt *heap=malloc(*nb_elt*sizeof(struct elt));
-   //smalloc();
+   struct elt *heap=smalloc(*nb_elt*sizeof(struct elt));
+
+   /* Remplissage du tas */
+   for (uint8_t j=0; j<*nb_elt; j++){
+      insert_heap(&tab[j], heap, j, *nb_elt) ;
+   }
 
 
    return heap ;
@@ -214,18 +223,58 @@ void free_heap( struct elt *heap){
 }
 
 
-
-
+////////////////////////////////////////////////////////////////////
+///////////   FONCTIONS SUR LES ARBRES DE HUFFMAN /////////
 
 
 struct huff_table {
-
+   struct abr *huff_tree ;
 };
 
-/* extern struct huff_table create_huffman_table(...)
-   {
 
-   } */
+
+
+ struct huff_table create_huffman_table(struct elt tab[256])
+   {
+      uint8_t nb_elt;
+      struct elt *gauche ;
+      struct elt *droit ;
+      uint8_t sum_occ ;
+      struct elt *pere ;
+
+      /*Transformation du tableau en tas */
+      struct elt *heap=tab_to_heap( tab,  &nb_elt);
+
+      /*Tant que il reste des elt a traiter*/
+      while (nb_elt>0){
+	 sum_occ = 0 ;
+
+	 /*Fusion des deux meilleurs noeuds en un arbre*/
+
+	 gauche=best_elt(heap, nb_elt);
+	 sum_occ=gauche->occ ;
+	 delete_elt(heap, nb_elt);
+	 nb_elt --;
+
+
+	 droit =best_elt(heap, nb_elt);
+	 sum_occ=droit->occ;
+	 delete_elt(heap, nb_elt);
+	 nb_elt --;
+
+	 pere = smalloc(sizeof(struct elt));
+	 pere->abr->gauche=gauche ;
+	 pere->abr->droit=droit ;
+	 pere->occ=sum_occ ;
+	 pere->abr->est_feuille=false ;
+
+	 insert_heap(pere, heap, nb_elt, nb_elt);
+	 nb_elt ++;
+
+      }
+      /*Désallocation*/
+      free_heap(heap);
+   }
 
 void store_huffman_table(struct bitstream *stream, struct huff_table *ht)
 {

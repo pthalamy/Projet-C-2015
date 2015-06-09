@@ -6,22 +6,13 @@
 /*renvoie -1 si l'element n'y est pas, i si tab[i].abr->abr->symbole =symb  */
 
 int32_t recherche_tab(struct elt *tab[256], uint8_t symb ){
-   bool trouve=false ;
-   int32_t i  =0 ;
-   while ((! trouve) & (i<256)){
-      if (tab[i]->abr->symbole==symb) {
-	 trouve=true;
-      } else {
-	 i++;
-      }
-
+   for (uint16_t i = 0; i  < 256; i++) {
+      if (tab[i] != NULL)
+	 if (tab[i]->abr->symbole==symb)
+	    return i;
    }
-   if (trouve){
-      return i;
-   } else {
+   /* Pas trouvé */
       return -1 ;
-   }
-
 }
 
 
@@ -34,61 +25,65 @@ void init_freq(int32_t bloc[64],
 
 /* Maj de freq_DC */
 
-   int32_t dc= bloc[0]-*pred_DC ;
+   int32_t dc= bloc[0] - *pred_DC ;
    uint8_t mag = magnitude(dc);
+   int32_t x = recherche_tab( freq_DC, mag);
 
-   if (recherche_tab( freq_DC, (uint8_t)dc) == -1 ){
-      freq_DC[*ind_DC]->abr->symbole=dc ;
+   if (x == -1 ){
+      freq_DC[*ind_DC] = malloc (sizeof(struct elt));
+      freq_DC[*ind_DC]->abr = malloc (sizeof(struct abr));
+      freq_DC[*ind_DC]->abr->symbole = mag ;
       freq_DC[*ind_DC]->occ =1 ;
       (*ind_DC) ++;
    } else {
-      freq_DC[recherche_tab(freq_DC, (uint8_t)dc)]->occ++ ;
+      freq_DC[x]->occ++ ;
    }
 
-   *pred_DC =dc ;
+   *pred_DC = dc;
 
 /* Maj de freq_AC */
 
-   uint8_t i=1 ;
-   uint32_t nb_zeros=0;
+   uint8_t i = 1 ;
+   uint8_t nb_zeros=0;
    uint8_t val ;
-   uint8_t der =1;
+   uint8_t der =1; 		/* Dernier indice non nul */
 
-   while (i<63){
-
+   while (i < 64){
       // si on a un zéro on passe au coeff suivant en incrémentant le compteur
       if (bloc[i]==0){
 	 nb_zeros++;
 	 i++;
-
-
       } else {
 	 if (nb_zeros>16){
-	    printf("erreur: format incorrect");
+	    fprintf(stderr, "erreur: format incorrect\n");
+	    exit (EXIT_FAILURE);
 	 }
 
 	 /*calcul du symbole (nb zeros + mag) */
-	 mag=magnitude(bloc[i]);
-	 val= (nb_zeros <<4)||(0x0F & mag);
+	 mag = magnitude(bloc[i]);
+	 val = (nb_zeros << 4) | (0x0f & mag);
 
 	 /*maj indices*/
-	 der=i;
+	 der = i;
 	 i++;
 	 nb_zeros=0;
 
       }
 
-      if (der !=63){
-	 val=0x00;
+      if (der != 63){
+	 val = 0x00;
       }
 
       /*Maj de freq_AC*/
-      if (recherche_tab(freq_AC, val)==-1){
+      x = recherche_tab(freq_AC, val);
+      if (x == -1){
+	 freq_AC[*ind_AC] = malloc (sizeof(struct elt));
+	 freq_AC[*ind_AC]->abr = malloc (sizeof(struct abr));
 	 freq_AC[*ind_AC]->abr->symbole=val ;
 	 freq_AC[*ind_AC]->occ= 1 ;
 	 (*ind_AC)++;
       } else {
-	 freq_AC[(uint8_t)recherche_tab(freq_AC, val)]->occ++;
+	 freq_AC[x]->occ++;
       }
    }
 }

@@ -12,3 +12,5 @@ un commentaire. "
 
 png.jpg : image au format png mais avec une extension jpeg (déclenche
 une erreur)
+
+1.jpg : image de 1 pixel noir

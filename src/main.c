@@ -54,6 +54,8 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
 uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic);
 /* Vérifie qu'une allocation a bien été effectué */
 void check_alloc_main(void* ptr);
+void Y_to_Grayscale(uint8_t  *mcu_Y, uint32_t *mcu_RGB,
+		    uint32_t nb_blocks_h, uint32_t nb_blocks_v);
 
 int main(int argc, char *argv[]){
 
@@ -519,43 +521,62 @@ int main(int argc, char *argv[]){
       }
 
       i += composantes[index].sampling_factor_h * composantes[index].sampling_factor_v;
-      index = (index + 1) % 3;
+      index = (index + 1) % N;
    }
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++)
       free (blocs_idct[i]);
    free (blocs_idct);
 
-   /* YCbCr to ARGB */
+   /* YCbCr to ARGB ou grayscale */
    /* printf ("YCbCr2ARGB: \n"); */
-   uint32_t **mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
-   check_alloc_main (mcus_RGB);
-   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
-      mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
-      check_alloc_main (mcus_RGB[i]);
-   }
+   /* printf ("N: %d\n", N); */
+   uint32_t **mcus_gray = NULL;
+   uint32_t **mcus_RGB = NULL;
+   if (N == 1)  {
+      mcus_gray = malloc(nb_mcus_RGB*sizeof(uint32_t *));
+      check_alloc_main (mcus_gray);
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+	 mcus_gray[i] = malloc(64*sampling*sizeof(uint32_t));
+	 check_alloc_main (mcus_gray[i]);
+      }
 
-   k = 0;
-   for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
-      /* printf ("YCbCr2ARGB %d | k = %d \n", i, k); */
-      YCbCr_to_ARGB(mcus[i], mcus_RGB[k++],
-		    composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
-   }
+      k = 0;
+      for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
+	 /* printf ("Y_to_grayscale %d  \n", i); */
+	 Y_to_Grayscale(mcus[i][0], mcus_gray[i],
+			composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
+      }
+   } else if (N == 3) {
+      mcus_RGB = malloc(nb_mcus_RGB*sizeof(uint32_t *));
+      check_alloc_main (mcus_RGB);
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+	 mcus_RGB[i] = malloc(64*sampling*sizeof(uint32_t));
+	 check_alloc_main (mcus_RGB[i]);
+      }
 
-   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
-      for (uint32_t j = 0; j < N; j++)
-	 free(mcus[i][j]);
-      free (mcus[i]);
+      k = 0;
+      for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
+	 /* printf ("YCbCr2ARGB %d | k = %d \n", i, k); */
+	 YCbCr_to_ARGB(mcus[i], mcus_RGB[k++],
+		       composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
+      }
    }
-   free (mcus);
 
    /* ecriture dans le TIFF */
    /* printf ("TIFF: \n"); */
    struct tiff_file_desc *tfd = init_tiff_file(output_name, width, height, 8*composantes[0].sampling_factor_v);
 
-   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
-      /* printf ("Write TIFF %d\n", i); */
-      write_tiff_file(tfd, mcus_RGB[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+   if (N == 1) {
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+	 /* printf ("Write TIFF %d\n", i); */
+	 write_tiff_file(tfd, mcus_gray[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+      }
+   } else if (N == 3) {
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+	 /* printf ("Write TIFF %d\n", i); */
+	 write_tiff_file(tfd, mcus_RGB[i],  composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+      }
    }
 
    /* Libération de variables allouées sur le tas */
@@ -564,9 +585,22 @@ int main(int argc, char *argv[]){
 
    free (output_name);
 
-   for (uint32_t i = 0; i < nb_mcus_RGB; i++)
-      free (mcus_RGB[i]);
-   free (mcus_RGB);
+   for (uint32_t i = 0; i < nb_mcus_RGB; i++) {
+      for (uint32_t j = 0; j < N; j++)
+	 free(mcus[i][j]);
+      free (mcus[i]);
+   }
+   free (mcus);
+
+   if (N == 1) {
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++)
+	 free (mcus_gray[i]);
+      free (mcus_gray);
+   } else if (N == 3) {
+      for (uint32_t i = 0; i < nb_mcus_RGB; i++)
+	 free (mcus_RGB[i]);
+      free (mcus_RGB);
+   }
 
    for (uint32_t i = 0; i < compteur_huff_AC; i++)
       free_huffman_table (huff_AC[i]);
@@ -669,6 +703,19 @@ uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
    return out;
 }
 
+void Y_to_Grayscale(uint8_t  *mcu_Y, uint32_t *mcu_RGB,
+		    uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+{
+   /* Pour chaque pixel des MCU Y, passage en uint32_t */
+   for (uint32_t i = 0;
+	i < (8 * nb_blocks_v) * (8 * nb_blocks_h); /* Nb elts mcu */
+	i++) {
+      mcu_RGB[i]  = 0;	/* Mise à 0, nécessaire pour A */
+      mcu_RGB[i] |= mcu_Y[i] << 16;
+      mcu_RGB[i] |= mcu_Y[i] << 8;
+      mcu_RGB[i] |= mcu_Y[i];
+   }
+}
 void check_alloc_main(void* ptr)
 {
    if (!ptr) {

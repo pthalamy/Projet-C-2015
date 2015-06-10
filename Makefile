@@ -11,7 +11,8 @@ TEST_DIR = tests
 CC = gcc
 LD = gcc
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -O0 -Wextra -g -DLOEFFLER # -O3
+CFLAGS = $(INC) -Wall -std=c99 -Wextra -DLOEFFLER -O3
+# CFLAGS += -g -O0
 LDFLAGS = -lm
 
 # Liste des objets encadrants
@@ -58,10 +59,10 @@ $(NEW_OBJ_DIR)/main.o: $(SRC_DIR)/main.c
 
 # Décodage des images de test
 $(TEST_DIR)/%.tiff: $(TEST_DIR)/%.jpeg jpeg2tiff
-	valgrind ./jpeg2tiff $<
+	 ./jpeg2tiff $<
 
 $(TEST_DIR)/%.tiff: $(TEST_DIR)/%.jpg jpeg2tiff
-	valgrind ./jpeg2tiff $<
+	 ./jpeg2tiff $<
 
 .PHONY: clean realclean tests
 tests: $(TEST_OUTPUTS)

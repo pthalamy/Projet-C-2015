@@ -94,8 +94,8 @@ int main(int argc, char *argv[]){
    /* Variables de table de Huffman */
    uint8_t compteur_huff_AC = 0 ; /* Nombre de tables AC */
    uint8_t compteur_huff_DC = 0; /* Nombre de tables DC */
-   struct huff_table *huff_AC[4]; /* Tables AC */
-   struct huff_table *huff_DC[4]; /* Tables DC */
+   struct huff_table *huff_AC[4] = {NULL, NULL, NULL, NULL}; /* Tables AC */
+   struct huff_table *huff_DC[4] = {NULL, NULL, NULL, NULL}; /* Tables DC */
 
    /* Variables de propriétés d'images et d'échantillonnage */
    uint32_t nb_mcus;		/* Nombre de MCUs YCbCr total */

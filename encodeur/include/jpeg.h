@@ -9,7 +9,18 @@
 
 /* Structure permettant de stocker les informations nécessaire à
  * l'écriture des données de l'image dans un fichier jpeg. */
-struct jpeg_file_desc;
+struct jpeg_file_desc {
+   struct bitstream *stream;
+   uint32_t imageWidth;
+   uint32_t imageHeight;
+   uint8_t sfh[3];
+   uint8_t sfv[3];
+   uint8_t N;
+   uint8_t iq[3];
+   uint8_t ic[3];
+   uint8_t ih_ac[3];
+   uint8_t ih_dc[3];
+};
 
 /* Initialisation du fichier JPEG résultat, avec les paramètres suivants:
    - width: la largeur de l'image ;
@@ -31,6 +42,8 @@ extern void export_DHT(struct jpeg_file_desc *jfd,
 		       const uint8_t codeLengths[16],
 		       const uint8_t *symboles,
 		       const uint8_t nbSym, uint8_t type, uint8_t indice);
+
+extern void export_SOS_Header(struct jpeg_file_desc *jfd);
 
 /* Ferme le fichier associé à la structure jpeg_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */

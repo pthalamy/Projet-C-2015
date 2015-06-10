@@ -204,26 +204,29 @@ int main(int argc, char **argv)
    /* affiche_huffman (table_DC_Y); */
    /* exit (EXIT_FAILURE); */
 
-   /* /\* PACK *\/ */
-   /* printf ("\nPACK\n"); */
-   /* pred_DC_C = 0; */
-   /* pred_DC_Y = 0; */
-   /* for (uint32_t i = 0; i < nbBlocs; ) { */
-   /*    /\* 4 Blocs de Luminance *\/ */
-   /*    for (uint32_t j = i; j < i + 4; j++) { */
-   /* 	 diff_DC(stream, &pred_DC_Y, table_DC_Y,  qzzBlocs + j * (64 * sizeof(int32_t))); */
-   /* 	 RLE_AC(stream, qzzBlocs + j * (64 * sizeof(int32_t)), table_AC_Y); */
-   /*    } */
-   /*    i += 4; */
-   /*    /\* 1 Bloc Cb *\/ */
-   /*    diff_DC(stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t))); */
-   /*    RLE_AC(stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C); */
-   /*    i++; */
-   /*    /\* 1 Bloc Cr *\/ */
-   /*    diff_DC(stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t))); */
-   /*    RLE_AC(stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C); */
-   /*    i++; */
-   /* } */
+   /* PACK */
+   printf ("\nPACK\n");
+
+   export_SOS_Header (jfd);
+
+   int32_t pred_DC_C = 0;
+   int32_t pred_DC_Y = 0;
+   for (uint32_t i = 0; i < nbBlocs; ) {
+      /* 4 Blocs de Luminance */
+      for (uint32_t j = i; j < i + 4; j++) {
+   	 diff_DC(jfd->stream, &pred_DC_Y, table_DC_Y,  qzzBlocs + j * (64 * sizeof(int32_t)));
+   	 RLE_AC(jfd->stream, qzzBlocs + j * (64 * sizeof(int32_t)), table_AC_Y);
+      }
+      i += 4;
+      /* 1 Bloc Cb */
+      diff_DC(jfd->stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t)));
+      RLE_AC(jfd->stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C);
+      i++;
+      /* 1 Bloc Cr */
+      diff_DC(jfd->stream, &pred_DC_C, table_DC_C,  qzzBlocs + i * (64 * sizeof(int32_t)));
+      RLE_AC(jfd->stream, qzzBlocs + i * (64 * sizeof(int32_t)), table_AC_C);
+      i++;
+   }
 
    close_jpeg_file (jfd);
 
@@ -256,6 +259,8 @@ int main(int argc, char **argv)
 
    free_tfd (tfd);
    free (output_name);
+
+   printf ("\nDONE \n");
 
    return (EXIT_SUCCESS);
 }

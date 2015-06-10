@@ -92,11 +92,9 @@ static const uint8_t AC_C_sym[] =
 /* 		      struct elt *freq_AC[256], uint8_t *ind_AC, */
 /* 		      int32_t  *pred_DC); */
 
-/* extern uint8_t magnitude(int32_t val, bool DC); */
-
 /* extern struct elt *tab_to_heap(struct elt *tab[256], uint8_t *nb_elt); */
 
-/* extern void huffman_value(struct abr *abr, uint8_t symbole, uint8_t *code, uint8_t *nb_bits); */
+extern void huffman_value(struct huff_table *abr, uint8_t symbole, uint8_t *code, uint8_t *nb_bits);
 
 /* extern struct abr *create_huffman_table(struct elt *tab[256], uint8_t *n); */
 

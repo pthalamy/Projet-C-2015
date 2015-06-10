@@ -18,20 +18,6 @@ struct huff_table {
    struct abr *huff_tree;
 };
 
-/* uint8_t magnitude(int32_t val, bool AC) */
-/* { */
-/*    uint8_t mag = 0; */
-/*    if (AC) */
-/*       mag++; */
-/*    uint8_t i = abs(val) ; */
-/*    while (i > 1){ */
-/*       i = i / 2; */
-/*       mag++; */
-/*    } */
-
-/*    return mag ; */
-/* } */
-
 void affiche_huffman_rec (struct abr *huff, uint8_t code[16], uint8_t nbits)
 {
    /* Huff est une feuille, affichage du code et de la valeur du noeud */
@@ -441,45 +427,59 @@ void free_huffman_table (struct huff_table *table)
 
 /* bool recherche_symbole(struct abr *abr, uint8_t symbole) */
 /* { */
-/*    if (abr->symbole==symbole){ */
+/*    if (abr->sym == symbole){ */
 /*       return true; */
 /*    } else { */
-
 /*       if(abr->est_feuille){ */
 /* 	 return false ; */
 /*       } */
 
 /*       if(recherche_symbole(abr->gauche, symbole)){ */
 /* 	 return true ; */
-/*       } */
-/*       else if (recherche_symbole(abr->droit, symbole)){ */
+/*       } else if (recherche_symbole(abr->droite, symbole)){ */
 /* 	 return true ; */
-/*       } */
-/*       else { */
-
+/*       } else { */
 /* 	 return false ; */
 /*       } */
 /*    } */
 
 /* } */
 
-/* void huffman_value(struct abr *abr, uint8_t symbole, uint8_t *code, uint8_t *nb_bits) */
-/* { */
-/*    *nb_bits = 0; */
+bool huffman_value_rec(struct abr *abr,
+		       uint8_t symbole,
+		       uint8_t *code,
+		       uint8_t *nb_bits)
+{
+   if (!abr)
+      return false;
+   else if (abr->est_feuille) {
+      return (abr->sym == symbole);
+   } else {
+      if (huffman_value_rec(abr->gauche, symbole, code, nb_bits)) {
+	 *code = (*code << 1 | 0 );
+	 (*nb_bits)++;
+	 return true ;
+      } else if (huffman_value_rec(abr->droite, symbole, code, nb_bits)) {
+	 *code = ((*code) << 1 | 1 );
+	 (*nb_bits)++;
+	 return true ;
+      } else {
+	 return false ;
+      }
+   }
+}
 
-/*    if (recherche_symbole(abr->gauche,symbole)){ */
-/*       *code=((*code)<<1 | (0x00) ); */
-/*       (*nb_bits)++; */
-/*    } */
-/*    else if (recherche_symbole(abr->droit,symbole)){ */
-/*       *code=((*code)<<1 | (0x01) ); */
-/*       (*nb_bits)++; */
-/*    } */
-/*    else { */
-/*       fprintf(stderr, "Recherche infructueuse du symbole %#x dans l'arbre \n", symbole); */
-/*       exit (EXIT_FAILURE); */
-/*    } */
-/* } */
+void huffman_value(struct huff_table *huff, uint8_t symbole, uint8_t *code, uint8_t *nb_bits)
+{
+   *nb_bits = 0;
+
+   if (!huffman_value_rec (huff->huff_tree, symbole, code, nb_bits)) {
+      fprintf(stderr, "Recherche infructueuse du symbole %#x dans l'arbre \n", symbole);
+      exit (EXIT_FAILURE);
+   /* } else { */
+   /*    printf ("code: %#x, nbb: %d\n", *code, *nb_bits); */
+   }
+}
 
 
 

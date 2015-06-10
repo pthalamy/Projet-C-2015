@@ -17,17 +17,6 @@
 
 #define NUM_COMPOSANTES 3
 
-struct jpeg_file_desc {
-   struct bitstream *stream;
-   uint32_t imageWidth;
-   uint32_t imageHeight;
-   uint8_t sfh[3];
-   uint8_t sfv[3];
-   uint8_t N;
-   uint32_t iq[3];
-   uint32_t ic[3];
-};
-
 struct jpeg_file_desc *init_jpeg_file (const char* output_name,
 				       uint32_t width,
 				       uint32_t height,
@@ -63,6 +52,14 @@ struct jpeg_file_desc *init_jpeg_file (const char* output_name,
    jfd->ic[0] = 1;
    jfd->ic[1] = 2;
    jfd->ic[2] = 3;
+
+   jfd->ih_dc[0] = 0;
+   jfd->ih_dc[1] = 1;
+   jfd->ih_dc[2] = 1;
+
+   jfd->ih_ac[0] = 2;
+   jfd->ih_ac[1] = 3;
+   jfd->ih_ac[2] = 3;
 
    /* Écriture du marqueur SOI */
    write_bitstream (jfd->stream, 16, SOI);
@@ -158,9 +155,29 @@ void export_DHT(struct jpeg_file_desc *jfd,
       write_bitstream (jfd->stream, 8, symboles[i]);
 }
 
+void export_SOS_Header(struct jpeg_file_desc *jfd)
+{
+   printf ("-> SOS: \n");
+   write_bitstream (jfd->stream, 16, SOS);
+
+   /* 2 * N = 3 + 6 */
+   write_bitstream (jfd->stream, 16, 12); /* longueur */
+
+   write_bitstream (jfd->stream, 8, jfd->N);
+
+   for (uint8_t i = 0; i < jfd->N; i++){
+      write_bitstream (jfd->stream, 8, jfd->ic[i]);
+      write_bitstream (jfd->stream, 4, jfd->ih_dc[i]);
+      write_bitstream (jfd->stream, 4, jfd->ih_ac[i]);
+   }
+
+   write_bitstream (jfd->stream, 24, 0); /* unused */
+}
+
 void close_jpeg_file(struct jpeg_file_desc *jfd)
 {
    if (jfd) {
+      printf ("-> EOI: \n");
       write_bitstream(jfd->stream, 16, EOI);
       free_bitstream(jfd->stream);
       free (jfd);

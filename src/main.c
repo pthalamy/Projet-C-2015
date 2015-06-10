@@ -443,13 +443,10 @@ int main(int argc, char *argv[]){
 	 /* printf ("EOI: fin de fichier  \n"); */
 	 return 0;
 
-      default :
+      default:
 	 marqueur_section(buf);
-
-
 	 /*passage à la section suivante*/
 	 skip_bitstream_until(stream, 0xff);
-
       }
    }
 
@@ -503,7 +500,6 @@ int main(int argc, char *argv[]){
 
 
    /* UPSAMPLING */
-   /* TODO: Gerer indices non fixés */
    /* printf ("UPSAMPLING: \n"); */
    uint8_t ***mcus = malloc(nb_mcus_RGB*sizeof(uint8_t **));
    check_alloc_main (mcus);
@@ -527,25 +523,10 @@ int main(int argc, char *argv[]){
 					   composantes[index].sampling_factor_h,
 					   composantes[index].sampling_factor_v);
 
-      /* for (uint32_t l = 0; */
-      /* 	   l < composantes[index].sampling_factor_h * composantes[index].sampling_factor_v; */
-      /* 	   l++) { */
-      /* 	 print_block (blocs_idct[i+l], i+l); */
-      /* } */
-
-      /* print_mcu (up_blocs, i, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
-
       upsampler (up_blocs, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v,
 		mcus[l][index], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
 
       free (up_blocs);
-
-      /* printf ("num_blocks_in_h: %d | _v: %d\n", */
-      /* 	      composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
-      /* printf ("num_blocks_out_h: %d | _v: %d\n", */
-      /* 	      composantes[0].sampling_factor_h, composantes[0].sampling_factor_v); */
-      /* print_mcu (mcus[k], k, composantes[0].sampling_factor_h, composantes[0].sampling_factor_v); */
-
 
       if (++k == N) {
 	 l++;
@@ -645,7 +626,6 @@ int main(int argc, char *argv[]){
 
    return 0;
 }
-
 
 char *check_and_gen_name(const char *input_name)
 {
@@ -752,60 +732,54 @@ void check_alloc_main(void* ptr)
 {
    if (!ptr) {
       fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+      exit (EXIT_FAILURE);
    }
 }
 
-void marqueur_section(uint32_t marqueur){
+void marqueur_section(uint32_t marqueur)
+{
+   printf("warning : Marqueur non traité: ");
 
-   printf("Erreur : Traitement du marqueur de section ");
-
-   if (marqueur==0xc8){
-      printf("JPG");
-   }
-   if (marqueur==0xcc){
-      printf("DAC");
-   }
-
-   switch (marqueur>>4 ){
-   case 0xc :
-      printf("SOF%i non traité par le décodeur \n", (marqueur&0x000F));
-      exit(EXIT_FAILURE);
-      break;
-   case 0xd:
-      if ((marqueur&0x000F)<8){
-	 printf("RST%i", marqueur&0x000F);
-      }
-      switch (marqueur&0x000F){
+   if (marqueur == 0xc8){
+      printf("JPG\n");
+   } else if (marqueur == 0xcc){
+      printf("DAC\n");
+   } else {
+      switch (marqueur >> 4) {
       case 0xc :
-	 printf("DNL");
+	 printf("SOF%i non supporté par le décodeur. \n", (marqueur&0x000F));
+	 exit(EXIT_FAILURE);
 	 break;
       case 0xd:
-	 printf("DRI");
-	 break ;
-      case 0xe:
-	 printf("DHP");
-	 break ;
-      case 0xf:
-	 printf("EXP");
+	 if ((marqueur & 0x000F) < 8) {
+	    printf("RST%i", marqueur & 0x000F);
+	 } else {
+	    switch (marqueur & 0x000F){
+	    case 0xc :
+	       printf("DNL\n");
+	       break;
+	    case 0xd:
+	       printf("DRI\n");
+	       break ;
+	    case 0xe:
+	       printf("DHP\n");
+	       break ;
+	    case 0xf:
+	       printf("EXP\n");
+	       break;
+	    }
+	 }
 	 break;
-
+      case 0xe :
+	 printf("APP%i\n", marqueur & 0x000F);
+	 break ;
+      case 0xf :
+	 printf("JPG%i\n", marqueur & 0x000F);
+	 break;
+      default :
+	 printf("Fatal error: Marqueur inconnu !\n");
+	 exit(EXIT_FAILURE);
+	 break ;
       }
-      break;
-
-   case 0xe :
-      printf("APP%i", marqueur&0x000F);
-      break ;
-   case 0xf :
-      printf("JPG%i", marqueur&0x000F);
-      break;
-   default :
-      printf(" non reconnu \n");
-      exit(EXIT_FAILURE);
-      break ;
-
-      }
-
-printf(" non géré \n");
-return;
-
+   }
 }

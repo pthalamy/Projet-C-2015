@@ -61,8 +61,8 @@ int main(int argc, char *argv[]){
 
    /* vérification de l'entrée */
    if ( argc != 2 ) {
-      fprintf(stderr, "Veuillez entrer le fichier JPEG à décoder en argument. \n");
-      exit (1);
+      fprintf(stderr, "erreur: Veuillez entrer le fichier JPEG à décoder en argument. \n");
+      exit (EXIT_FAILURE);
    }
 
    /* Vérification de la validité du nom et création du nom du fichier de sortie */
@@ -71,8 +71,8 @@ int main(int argc, char *argv[]){
    /* Initialisation du bitstream */
    struct bitstream *stream = create_bitstream(argv[1]);
    if (!stream) {
-      fprintf(stderr, "Impossible de créer le bitstream. Le fichier spécifié n'existe pas.\n");
-      exit (1);
+      fprintf(stderr, "erreur: Impossible de créer le bitstream. Le fichier spécifié n'existe pas.\n");
+      exit (EXIT_FAILURE);
    }
 
    /* Variables de table de Huffman */
@@ -119,8 +119,8 @@ int main(int argc, char *argv[]){
    /* Vérification de présence du marqueur SOI */
    read_nbytes(stream, 2, &buf, false);
    if (buf != 0xffd8) {
-      fprintf(stderr, "Le fichier ne commence pas par un SOI mais 0x%x !\n", buf);
-      exit (1);
+      fprintf(stderr, "erreur: Le fichier ne commence pas par un SOI mais 0x%x !\n", buf);
+      exit (EXIT_FAILURE);
    }
 
    /* Lecture des sections jusqu'à récupération des blocs */
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 1, (uint32_t*)&jfif[4], false);
 	 if (strcmp (jfif, "JFIF")) {
 	    fprintf (stderr, "erreur APP0 : JFIF absent <= %s\n", jfif);
-	    exit (1);
+	    exit (EXIT_FAILURE);
 	 }
 
 	 /* Lecture des données additionnelles */
@@ -192,15 +192,15 @@ int main(int argc, char *argv[]){
       case DQT:			/* 0xdb */
 	 /* printf ("DQT: \n"); */
 
-	 if (!unicite){
-	    /* printf("erreur: plusieurs définitions des tablesde quantification \n"); */
-	    exit (1);
+	 if (!unicite) {
+	    fprintf(stderr, "erreur: Plusieurs marqueurs DQT de plus d'une table dans le fichier.\n");
+	    exit (EXIT_FAILURE);
 	 }
 
 	 //* calcul du nombre de tables de la section */
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 /* printf (" longeur section: %d\n", longueur_section); */
-	 uint32_t nb_tables_section = (longueur_section-2) / 65;
+	 uint32_t nb_tables_section = (longueur_section - 2) / 65;
 	 /* printf (" nombre de tables: %d\n", nb_tables_section); */
 
 	 if (nb_tables_section != 1) {
@@ -230,7 +230,13 @@ int main(int argc, char *argv[]){
 	 for (uint8_t i  = nb_tables ; i < nb_tables + nb_tables_section; i++) {
 	    /* printf (" Table %d\n", i); */
 	    read_nbits(stream, 4, &precision, false);
-	    /* printf ("  précision: %d\n", precision); */
+	    /* printf ("  précision: %#x\n", precision); */
+
+	    if (precision & 0xf) {
+	       fprintf (stderr, "erreur: Précision DQT de %d bits. Non supporté.\n", 8 + 8*precision);
+	       exit (EXIT_FAILURE);
+	    }
+
 	    read_nbits(stream, 4, & iq, false);
 	    /* printf ("  indice: %d\n  ", iq); */
 	    quantif[i].ind = iq ;
@@ -251,6 +257,10 @@ int main(int argc, char *argv[]){
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 /* printf (" longeur section: %d\n", longueur_section); */
 	 read_nbytes(stream, 1, &precision, false);
+	 if (precision & 0x01) {
+	    fprintf (stderr, "erreur: Précision SOF0 de %d bits. Non supporté.\n", N);
+	    exit (EXIT_FAILURE);
+	 }
 	 /* printf (" precision: %d\n", precision); */
 
 	 read_nbytes(stream, 2, &height, false);
@@ -260,6 +270,10 @@ int main(int argc, char *argv[]){
 
 	 read_nbytes(stream, 1, &N, false);
 	 /* printf (" N: %d\n", N); */
+	 if (N != 1 && N != 3) {
+	    fprintf (stderr, "erreur: ColorSpace de %d composantes. Non supporté.\n", N);
+	       exit (EXIT_FAILURE);
+	 }
 
 	 composantes = malloc(N*sizeof(struct unit));
 	 check_alloc_main (composantes);
@@ -295,9 +309,9 @@ int main(int argc, char *argv[]){
 	    uint32_t zeros;
 	    read_nbits(stream, 3, &zeros, false);
 	    if (zeros) {
-	       fprintf (stderr, " erreur: Les 3 premiers bits d'information de"
+	       fprintf (stderr, "erreur: Les 3 premiers bits d'information de"
 			" la table de Huffman doivent valoir 0 /= %#x\n", zeros);
-	       exit (1);
+	       exit (EXIT_FAILURE);
 	    }
 
 	    uint32_t type;
@@ -308,8 +322,8 @@ int main(int argc, char *argv[]){
 	    read_nbits(stream, 4, &indice, false);
 	    /* printf (" indice: %d\n", indice); */
 	    if (indice > 3) {
-	       fprintf (stderr, " erreur: L'indice de la table de Huffman ne peut être %d > 3\n", indice);
-	       exit (1);
+	       fprintf (stderr, "erreur: L'indice de la table de Huffman ne peut être %d > 3\n", indice);
+	       exit (EXIT_FAILURE);
 	    }
 
 	    nb_byte_read++;
@@ -324,6 +338,12 @@ int main(int argc, char *argv[]){
 	    }
 	    nb_byte_read += byteCount;
 	    /* printf ("nb bytes read: %d\n", nb_byte_read); */
+	    if (nb_byte_read != longueur_section) {
+	       fprintf (stderr, "erreur: Section DHT ne fait pas la taille indiquée. \n"
+			"nb_byte_read: %d \\= L: %d\n", nb_byte_read, longueur_section);
+	       exit (EXIT_FAILURE);
+	    }
+
 	 }
 	 break ;
 
@@ -336,6 +356,10 @@ int main(int argc, char *argv[]){
 
 	 read_nbytes(stream,1, &N, false );
 	 /* printf (" N: %d\n", N); */
+	 if (N != 1 && N != 3) {
+	    fprintf (stderr, "erreur: ColorSpace de %d composantes. Non supporté.\n", N);
+	    exit (EXIT_FAILURE);
+	 }
 
 	 ordre_composantes = malloc (N * sizeof(uint8_t));
 	 check_alloc_main (composantes);
@@ -344,10 +368,10 @@ int main(int argc, char *argv[]){
 	    read_nbytes(stream, 1, &ic, false);
 	    /* printf (" indice: %d\n", ic); */
 	    ordre_composantes[i] = ic;
-	    read_nbits(stream, 4, &ih_ac, false);
-	    /* printf (" indice huffman AC: %d\n", ih_ac); */
 	    read_nbits(stream, 4, &ih_dc, false);
-	    /* printf (" indice huffman DC: %d\n", N); */
+	    /* printf (" indice huffman DC: %d\n", ih_dc); */
+	    read_nbits(stream, 4, &ih_ac, false);
+	    /* printf (" indice huffman AC: %d\n", ih_dc); */
 
 	    index = ic_to_i (composantes, N, ic);
 	    composantes[index].ih_ac = ih_ac;
@@ -417,7 +441,7 @@ int main(int argc, char *argv[]){
 
       default :
 	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
-	 exit (1);
+	 exit (EXIT_FAILURE);
       }
    }
 
@@ -622,7 +646,7 @@ char *check_and_gen_name(const char *input_name)
 
    if (strcmp(ext, ".jpeg") && strcmp(ext, ".jpg")) {
       fprintf(stderr, "erreur: L'extension de fichier n'est ni .jpeg, ni .jpg !\n");
-      exit (1);
+      exit (EXIT_FAILURE);
    }
 
    /* On remplace l'extension .jp(e)g par .tiff */
@@ -663,7 +687,7 @@ void read_nbits(struct bitstream *stream, uint8_t nb_bits, uint32_t *dest, bool 
 {
    uint8_t nbLus = read_bitstream(stream, nb_bits, dest, byte_stuffing);
    if (nbLus != nb_bits)
-      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
+      fprintf(stderr, "erreur lecture bitstream : %d / %d\n", nbLus, nb_bits);
 
    /* printf ("%#.2x ", *dest); */
 }
@@ -672,7 +696,7 @@ void read_nbytes(struct bitstream *stream, uint8_t nb_bytes, uint32_t *dest, boo
 {
    uint8_t nbLus = read_bitstream(stream, 8*nb_bytes, dest, byte_stuffing);
    if (nbLus != 8*nb_bytes)
-      fprintf(stderr, "Erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
+      fprintf(stderr, "erreur lecture bitstream : %d / %d\n", nbLus, nb_bytes * 8);
 
    /* printf ("%#.2x ", *dest); */
 }
@@ -686,7 +710,7 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic)
 	 return i;
 
    fprintf  (stderr, "erreur: l'ic %d n'existe pas parmis les composantes\n", ic);
-   exit (1);
+   exit (EXIT_FAILURE);
 }
 
 uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)

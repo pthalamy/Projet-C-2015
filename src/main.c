@@ -489,7 +489,7 @@ int main(int argc, char *argv[]){
    uint32_t l = 0;
    index = 0;
    while (i < nb_blocks_scan) {
-      printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
+      /* printf ("upsampling %d | ic = %d | k = %d \n", i, index, k); */
       /* Rearrangement des blocs pour upsampling */
       uint8_t *up_blocs = rearrange_blocs (blocs_idct, i,
 					   composantes[index].sampling_factor_h,
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]){
 
    /* YCbCr to ARGB ou grayscale */
    /* printf ("YCbCr2ARGB: \n"); */
-   printf ("N: %d\n", N);
+   /* printf ("N: %d\n", N); */
    uint32_t **mcus_gray = NULL;
    uint32_t **mcus_RGB = NULL;
    if (N == 1)  {
@@ -543,7 +543,7 @@ int main(int argc, char *argv[]){
 
       k = 0;
       for (uint32_t i = 0; i < nb_mcus_RGB; i ++) {
-	 printf ("Y_to_grayscale %d  \n", i);
+	 /* printf ("Y_to_grayscale %d  \n", i); */
 	 Y_to_Grayscale(mcus[i][0], mcus_gray[i],
 			composantes[0].sampling_factor_h, composantes[0].sampling_factor_v);
       }
@@ -704,15 +704,18 @@ uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
 }
 
 void Y_to_Grayscale(uint8_t  *mcu_Y, uint32_t *mcu_RGB,
-		   uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+		    uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
    /* Pour chaque pixel des MCU Y, passage en uint32_t */
    for (uint32_t i = 0;
 	i < (8 * nb_blocks_v) * (8 * nb_blocks_h); /* Nb elts mcu */
-	i++)
-      mcu_RGB[i]  = mcu_Y[i];	/* Mise à 0, nécessaire pour A */
+	i++) {
+      mcu_RGB[i]  = 0;	/* Mise à 0, nécessaire pour A */
+      mcu_RGB[i] |= mcu_Y[i] << 16;
+      mcu_RGB[i] |= mcu_Y[i] << 8;
+      mcu_RGB[i] |= mcu_Y[i];
+   }
 }
-
 void check_alloc_main(void* ptr)
 {
    if (!ptr) {

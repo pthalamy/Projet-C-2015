@@ -39,4 +39,4 @@ $(OBJ_DIR)/main.o: $(SRC_DIR)/main.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f tiff2jpeg $(OBJ_FILES) # tests/*.tiff
+	rm -f tiff2jpeg $(OBJ_FILES) tests/*.jp*

@@ -495,7 +495,7 @@ int main(int argc, char *argv[]){
 
 	 marqueur_section(buf);
 
-	 fprintf(stderr, "Erreur, marqueur de section non reconnu \n");
+	 fprintf(stderr, " non reconnu \n");
 	 exit (1);
       }
    }
@@ -700,9 +700,9 @@ void marqueur_section(uint32_t marqueur){
       return;
       break ;
 
-      printf(" non géré \n");
-   }
+      }
 
-
+printf(" non géré \n");
+return;
 
 }

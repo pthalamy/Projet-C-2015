@@ -22,6 +22,12 @@ struct huff_table {
    struct abr *huff_tree;
 };
 
+void check_alloc_huffman(void* ptr)
+{
+   if (!ptr) {
+      fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+   }
+}
 
 void affiche_huffman_rec (struct abr *huff, uint8_t code[16], uint8_t nbits)
 {
@@ -55,134 +61,55 @@ void affiche_huffman (struct abr *huff)
    }
 }
 
-// insertion à la profondeur prof, le plus a gauche possible
-// renvoie une booléen qui permet de savoir si l'insertion a réussi
-// prérequis : profondeur inf ou égale à lg max !!!!
-// insertion à la profondeur prof, le plus a gauche possible
-// renvoie une booléen qui permet de savoir si l'insertion a réussi
-// prérequis : profondeur inf ou égale à lg max !!!!
-bool insertion_gauche( struct abr *abr, uint8_t prof, uint8_t symbole){
+bool insertion(struct abr **abr, uint8_t depth, uint8_t sym)
+{
+   /* On descend jusqu'à la profondeur à atteindre */
+   /* printf ("depth: %d\t", depth); */
+   /* printf ("abr: %p\n", (*abr)); */
+   if (depth) {
 
+      if (!(*abr)) {
+	 /* printf ("Création non-feuille: \n"); */
+	 /* Création d'un noeud intermédiaire */
+	 (*abr) = malloc (sizeof(struct abr));
+	 check_alloc_huffman ((*abr));
+	 (*abr)->est_feuille = false;
+	 (*abr)->gauche = NULL;
+	 (*abr)->droite = NULL;
+      }
 
-   if (prof==1){
-      printf("prof=1 \n");
-      if(abr==NULL){
-	 abr=malloc(sizeof(struct abr));
-	 insertion_gauche(abr, prof, symbole);
+      if (!(*abr)->est_feuille) {
+	 /* Tentative d'insertion dans le sous-arbre, avec priorité à gauche */
+	 if (insertion (&((*abr)->gauche), depth - 1, sym)) return true;
+	 else return insertion (&((*abr)->droite), depth - 1, sym);
+      }
+
+   } else {
+
+      /* Si le noeud est inexistant, on créée la feuille ici, sinon on tente un autre sous-arbre*/
+      if (!(*abr)) {
+	 /* printf ("Création feuille: 0x%x \t %p\n", sym, abr); */
+	 (*abr) = malloc (sizeof(struct abr));
+	 check_alloc_huffman ((*abr));
+	 (*abr)->est_feuille = true;
+	 (*abr)->sym = sym;
+	 (*abr)->gauche = NULL;
+	 (*abr)->droite = NULL;
 	 return true;
       }
-      else if (abr->gauche ==NULL){
-	 abr->gauche= malloc(sizeof(struct abr));
-	 printf("arbre alloué g \n");
-	 abr->gauche->sym=symbole;
-	 abr->gauche->est_feuille=true;
-	 return true ;
-      }
-      else if (abr->droite ==NULL){
-	 abr->droite=malloc(sizeof(struct abr));
-	 printf("arbre alloué d \n ");
-	 abr->droite->sym=symbole;
-	 abr->droite->est_feuille =true;
-	 return true ;
-      }
-      else {
-	 printf ("niveau plein");
-	 return(false);
-      }
-      printf("sortie boucle1 \n");
-   }
-
-   else {
-      printf ("prof diff1 \n");
-      if (abr==NULL){
-	 printf("alloc nv noeud non feuille \n");
-	 abr=malloc(sizeof(struct abr));
-	 insertion_gauche(abr, prof, symbole);
-      }
-      else {
-	 printf("acs arbre non null \n");
-	 if (insertion_gauche(abr->gauche, prof-1, symbole)){
-	    printf("appel gauche \n");
-	    return true; }
-
-	 else if (insertion_gauche(abr->droite, prof-1, symbole)){
-	    printf("appel droite \n");
-	    return true;
-	 }
-	 else {
-	    printf("pas de place pour descendre");
-	    return false ;
-	 }
-      }
 
    }
-
+   return false;
 }
-
-
-   // insertion juste en dessous de la racine
-   /* if (prof==1){ */
-   /*    if (abr==NULL){ */
-   /* 	 printf("abr null \n "); */
-   /* 	 return false ; */
-   /*    } */
-   /*    if (abr->gauche==NULL){ */
-   /* 	 abr->gauche= malloc(sizeof(struct abr)); */
-   /* 	 abr -> gauche ->sym = symbole ; */
-   /* 	 return true; */
-   /*    } */
-   /*    else if (abr->droite ==NULL){ */
-   /* 	 abr -> droite= malloc (sizeof (struct abr)); */
-   /* 	 abr->droite ->sym= symbole ; */
-   /* 	 return true; */
-   /*    } */
-   /*    else { */
-   /* 	 printf("niveau plein \n "); */
-   /* 	 return false ; */
-   /*    } */
-   /* } */
-
-   /* else { */
-   /*    if (insertion_gauche(abr->gauche, prof-1, symbole)){ */
-   /* 	 return true; } */
-
-   /*    else if (insertion_gauche(abr->droite, prof-1, symbole)){ */
-   /* 	 return true; */
-   /*    } */
-   /*    else { */
-   /* 	 return false ; */
-   /*    } */
-   /* } */
-
-
-
-
-
-/* void construire_arbre (struct abr *huff_tree, */
-/* 		       uint8_t *sym, */
-/* 		       uint8_t *symOfLen, */
-/* 		       uint8_t *symCour, */
-/* 		       uint8_t nb_symb) */
-/* { */
-/*    if (*symCour < nb_symb) { */
-/*       huff_tree = malloc (sizeof(struct abr)); */
-/*       /\* huff_tree->gauche = malloc (sizeof(struct abr)); *\/ */
-/*       /\* huff_tree->droite = malloc (sizeof(struct abr)); *\/ */
-
-/*       if () { */
-
-/*       } */
-/*    } */
-/* } */
 
 struct huff_table *load_huffman_table(
    struct bitstream *stream, uint16_t *nb_byte_read)
 {
    *nb_byte_read = 0;
 
-   struct huff_table *huff = malloc (sizeof(struct huff_table));
-   printf("alloc huff table \n");
-   if (!huff) {
+   struct huff_table *ht = malloc (sizeof(struct huff_table));
+   check_alloc_huffman (ht);
+   if (!ht) {
       *nb_byte_read = -1;
       return NULL;
    }
@@ -191,109 +118,69 @@ struct huff_table *load_huffman_table(
    uint16_t nb_symb = 0;
    uint8_t symbOfLen[16];
    uint32_t buf ;
-   printf ("Symboles de longueur: \n");
+
+   /* printf ("Symboles de longueur: \n"); */
    for (uint8_t i = 0; i < 16; i++) {
       read_bitstream (stream, 8, &buf, false);
       (*nb_byte_read)++;
-      symbOfLen[i] = 0xff & buf;
+      symbOfLen[i] = buf;
       nb_symb += symbOfLen[i];
-      printf ("%d ", symbOfLen[i]);
+      /* printf ("%d ", symbOfLen[i]); */
    }
 
-   printf ("\nNombre de symboles: %d\n", nb_symb);
+   /* printf ("\nNombre de symboles: %d\n", nb_symb); */
    assert (nb_symb < 256);
    uint8_t symboles[nb_symb];
 
-   printf ("{ ");
+   /* printf ("{ "); */
    for (uint8_t j = 0; j < nb_symb; j++) {
-      read_bitstream (stream, 8, &buf, false);
+      read_bitstream (stream, 8, &buf, true);
       (*nb_byte_read)++;
-      symboles[j] = buf & 0xff;
-      printf ("0x%x ", buf);
+      symboles[j] = buf;
+      /* printf ("0x%x ", buf); */
    }
-   printf ("};\n");
+   /* printf ("};\n"); */
 
-   printf ("nb_byte_read: %d\n", *nb_byte_read);
+   /* printf ("nb_byte_read: %d\n", *nb_byte_read); */
 
-   printf ("\n");
+   /* printf ("\n"); */
 
 // Construction de l'arbre
-
-   //Calcul de la longueur maximale
-   uint8_t lg_max ;
-   uint8_t i=15 ;
-   while(symbOfLen[i]==0){
-      i--;
-   }
-   lg_max =i;
-
-   //Remplissage de l'arbre niveau par niveau
-
-   printf("remplissage arbre \n");
-   uint8_t compteur_symbole; // nb de symboles insérés sur une prof
-   uint8_t compteur_table=0; // nb de symboles a insérer sur une prof
-
-   uint8_t nb_symb_codes=0;
-
-   printf("nb tot symb: %i \n", nb_symb);
-   printf ("longueur max, %i \n ", lg_max);
-   printf("entrée boucle for \n");
-
-   for (uint8_t j =0; j< lg_max; j++ ){
-      printf("nb symboles codés : %i \n", nb_symb_codes);
-
-      compteur_table= symbOfLen[j];
-
-      compteur_symbole=0;
-
-      while(compteur_symbole !=compteur_table){
-
-	 affiche_huffman(huff->huff_tree);
-	 printf("insertion arbre \n");
-	bool  insert= insertion_gauche(huff->huff_tree, j+1,symboles[nb_symb_codes]);
-
-	if (insert) {
-	   printf("insertion réussie \n");
-	compteur_symbole++;
-	 nb_symb_codes++;
+   ht->huff_tree = NULL;
+   uint8_t curSym = 0;		/* Indice du symbole courant */
+   /* Pour chaque longueur de code, insertion des symboles correspondant dans l'arbre */
+   for (uint32_t i = 1; i <= 16; i++) {
+      for (uint32_t j = 0; j < symbOfLen[i-1]; j++) {
+	 /* printf ("Insertion: depth = %d | symbole = 0x%x\n", i, symboles[curSym]); */
+	 insertion (&ht->huff_tree, i, symboles[curSym++]);
       }
-
-
    }
 
-
-
-}
-   return huff;
+   return ht;
 }
 
+uint8_t count = 0;
 void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, struct bitstream *stream){
-
-   bool byte_stuffing= false;
-
-   if (arbre==NULL) {
-      printf("arbre null");
+   /* printf ("count: %d\n", ++count); */
+   if (arbre == NULL) {
+      /* printf("arbre null\n"); */
       return ;
-   }
-   else if (arbre->est_feuille){
+   } else if (arbre->est_feuille) {
       *symbole = arbre -> sym;
-      printf("feuille atteinte");
+      /* printf("feuille atteinte : 0x%x \n", *symbole); */
       return ;
-   }
-   else {
-      uint8_t suivant=read_bitstream(stream, 1, &direction, byte_stuffing);
-      (void) suivant;
+   } else {
+      read_bitstream(stream, 1, &direction, true);
+      /* printf ("%d", direction); */
 
-      if (direction==1){
+      if (direction == 1){
 	 rec_parcours_abr(arbre->droite,direction , symbole, stream);
-	 printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole );
-      }
-      else if (direction==0){
+	 /* printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole ); */
+      } else if (direction == 0){
 	 rec_parcours_abr(arbre->gauche, direction, symbole, stream);
-	  printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole );
-      }
-      else {
-	 printf("erreur dans la lecture bit !=0ou1");
+	 /* printf("dir : %i, symbole : %i/ parcours droit \n", direction, *symbole ); */
+      } else {
+	 printf("erreur dans la lecture bit !=0ou1\n");
 	 exit(1);
       }
    }
@@ -305,34 +192,31 @@ void rec_parcours_abr(struct abr *arbre, uint32_t direction, uint8_t *symbole, s
 int8_t next_huffman_value(struct huff_table *table,
 			  struct bitstream *stream)
 {
-   uint32_t direction;
-   uint8_t symb ;
-   uint8_t suiv=read_bitstream(stream, 1, &direction, false);
-   (void)suiv;
+   uint32_t direction = 2;	/* avoid uninitialized use */
+   uint8_t symb = 0;
    rec_parcours_abr(table->huff_tree, direction, &symb,  stream );
    return symb;
-
 }
 
 void libere_huffman (struct abr *huff)
 {
    if (huff) {
       /* libere sous-arbre gauche */
-      if (huff->gauche) {
-	 libere_huffman (huff->gauche);
-      }
+      libere_huffman (huff->gauche);
 
       /* Libere sous-arbre droit */
-      if (huff->droite) {
-	 libere_huffman (huff->droite);
-      }
+      libere_huffman (huff->droite);
 
       free (huff);
       huff = NULL;
    }
 }
 
-void free_huffman_table(struct huff_table *table)
+void free_huffman_table (struct huff_table *table)
 {
-   /* libere_huffman (table->huff_tree); */
+   if (table) {
+      libere_huffman (table->huff_tree);
+      free (table);
+      table = NULL;
+   }
 }

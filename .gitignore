@@ -38,3 +38,5 @@ encodeur/*.o
 # Project specific files
 tests/*.tiff
 jpeg2tiff
+
+tests/test_huff

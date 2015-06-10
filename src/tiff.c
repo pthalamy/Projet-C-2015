@@ -271,7 +271,7 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 		      uint8_t nb_blocks_h,
 		      uint8_t nb_blocks_v)
 {
-   /* printf ("V : %d | H : %d\n", nb_blocks_v, nb_blocks_h); */
+   printf ("V : %d | H : %d\n", nb_blocks_v, nb_blocks_h);
    /* Stockage de la MCU d'entrée */
    /* Par composante 8*8 */
    for (uint32_t k = 0; k < nb_blocks_v; k++) {

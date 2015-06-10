@@ -489,7 +489,7 @@ int main(int argc, char *argv[]){
    uint32_t l = 0;
    index = 0;
    while (i < nb_blocks_scan) {
-      /* printf ("upsampling %d | ic = %d | k = %d \n", i, index, k); */
+      printf ("upsampling %d | ic = %d | k = %d \n", i, index, k);
       /* Rearrangement des blocs pour upsampling */
       uint8_t *up_blocs = rearrange_blocs (blocs_idct, i,
 					   composantes[index].sampling_factor_h,
@@ -521,7 +521,7 @@ int main(int argc, char *argv[]){
       }
 
       i += composantes[index].sampling_factor_h * composantes[index].sampling_factor_v;
-      index = (index + 1) % 3;
+      index = (index + 1) % N;
    }
 
    for (uint32_t i = 0; i < nb_blocks_scan; i++)

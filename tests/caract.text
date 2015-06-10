@@ -1,0 +1,24 @@
+IMAGES TESTS POUR DECODEUR JPEG
+
+shaun_the_sheep.jpeg, ice_age.jpeg, babilon.jpg, babilon_amphi.jpg, zorglub.jpg
+
+
+TAILLE IMAGE
+1.jpg : image de 1 pixel noir
+mcu.jpg : image 8*8 (1MCU), échantillonée 4:4:4
+savane.jpg : image de grande taille
+paysage.jpg : image de tres grande taille (certaines sections non reconnues)
+
+ECHANTILLONNAGE
+color_444.jpg : echantillonnage 4:4:4
+color_422.jpg : echantillonnage 4:2:2 (horizontal)
+color_420.jpg : echantillonnage 4:2:0
+
+AUTRES
+commentaire.jpg : image avec le commentaire "Ceci est une image avec
+un commentaire. "
+
+png.jpg : image au format png mais avec une extension jpeg (déclenche
+une erreur)
+
+blackandwhite.jpg : image en teintes de gris

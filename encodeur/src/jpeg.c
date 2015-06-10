@@ -97,18 +97,17 @@ void export_DQT(struct jpeg_file_desc *jfd,
    /* 2 tables (128) + 2 * (1) + champ longueur (2) = 132 */
    write_bitstream (jfd->stream, 16, 132);
 
-   write_bitstream (jfd->stream, 4, 0); /* Precision 0 */
-   write_bitstream (jfd->stream, 4, 0); /* Indice 0 */
-   write_bitstream (jfd->stream, 4, 0); /* Precision 0 */
-   write_bitstream (jfd->stream, 4, 1); /* Indice 1 */
-
-   /* 2 Tables de quantif */
    for (uint32_t i = 0; i < 2; i++) {
+      write_bitstream (jfd->stream, 4, 0); /* Precision 0 */
+      write_bitstream (jfd->stream, 4, i); /* Indice i */
       for (uint8_t j = 0; j < 64; j++) {
+	 printf ("%#x ", table_quantif[i][j]);
 	 write_bitstream (jfd->stream, 8, table_quantif[i][j]);
       }
+      printf ("\n");
    }
 
+   /* exit (1); */
 }
 
 void export_SOF0(struct jpeg_file_desc *jfd)
@@ -142,6 +141,8 @@ void export_DHT(struct jpeg_file_desc *jfd,
    write_bitstream (jfd->stream, 16, DHT);
 
    uint16_t longueur = 2 + 1 + 16 + nbSym;
+   printf ("nbSym : %d\n", nbSym);
+   printf ("longueur_DHT : %d\n", longueur);
    write_bitstream (jfd->stream, 16, longueur);
 
    write_bitstream (jfd->stream, 3, 0); /* 3 zeros */
@@ -166,9 +167,13 @@ void export_SOS_Header(struct jpeg_file_desc *jfd)
    write_bitstream (jfd->stream, 8, jfd->N);
 
    for (uint8_t i = 0; i < jfd->N; i++){
+      printf ("indice: %d\n", i);
       write_bitstream (jfd->stream, 8, jfd->ic[i]);
+      printf ("ic: %d\n", jfd->ic[i]);
       write_bitstream (jfd->stream, 4, jfd->ih_dc[i]);
+      printf ("dc: %d\n", jfd->ih_dc[i]);
       write_bitstream (jfd->stream, 4, jfd->ih_ac[i]);
+      printf ("ac: %d\n", jfd->ih_ac[i]);
    }
 
    write_bitstream (jfd->stream, 24, 0); /* unused */

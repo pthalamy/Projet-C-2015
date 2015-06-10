@@ -14,7 +14,7 @@ struct huff_table;
 
 #define DC_Y_NB_SYM 12
 #define DC_C_NB_SYM 12
-#define AC_Y_NB_SYM 12
+#define AC_Y_NB_SYM 162
 #define AC_C_NB_SYM 162
 
 /* Table de Huffman standard du standard JPEG annexe K.3  */

@@ -16,8 +16,24 @@
 #define APP0 0xe0
 #define COM 0xfe
 #define DQT 0xdb
+
 #define SOF0 0xc0
+#define SOF1 0xc1
+#define SOF2 0xc2
+#define SOF3 0xc3
 #define DHT 0xc4
+#define SOF5 0xc5
+#define SOF6 0xc6
+#define SOF7 0xc7
+#define JPEG 0xc8
+#define SOF9 0xc9
+#define SOF10 0xca
+#define SOF11 0xcb
+#define DAC 0xcc
+#define SOF13 0xcd
+#define SOF14 0xce
+#define SOF15 0xcf
+
 #define SOS 0xda
 #define EOI 0xd9
 
@@ -180,13 +196,13 @@ int main(int argc, char *argv[]){
 	 break ;
 
       case COM :			/* 0xfe */
-	 /* printf ("COM: \n"); */
+	 printf ("COM: ");
 	 read_nbytes(stream, 2, &longueur_section, false);
 	 for (uint8_t i =0; i<longueur_section-2 ; i++){
 	    read_nbytes(stream, 1, &buf, false);
-	    /* printf("%c", buf) ; */
+	    printf("%c", buf) ;
 	 }
-	    /* printf("\n") ; */
+	 printf("\n") ;
 	 break ;
 
       case DQT:			/* 0xdb */
@@ -249,7 +265,7 @@ int main(int argc, char *argv[]){
 	 }
 
 	 nb_tables += nb_tables_section;
-      break ;
+	 break ;
 
       case SOF0:			/* 0xc0 */
 	 /* printf ("SOF0: \n"); */
@@ -272,7 +288,7 @@ int main(int argc, char *argv[]){
 	 /* printf (" N: %d\n", N); */
 	 if (N != 1 && N != 3) {
 	    fprintf (stderr, "erreur: ColorSpace de %d composantes. Non supporté.\n", N);
-	       exit (EXIT_FAILURE);
+	    exit (EXIT_FAILURE);
 	 }
 
 	 composantes = malloc(N*sizeof(struct unit));
@@ -439,12 +455,30 @@ int main(int argc, char *argv[]){
 	 /* printf ("EOI: fin de fichier  \n"); */
 	 return 0;
 
-      default :
-	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
+      case SOF1:
+      case SOF2:
+      case SOF3:
+      case SOF5:
+      case SOF6:
+      case SOF7:
+      case SOF9:
+      case SOF10:
+      case SOF11:
+      case SOF13:
+      case SOF14:
+      case SOF15:
+	 fprintf(stderr, "erreur: L'image n'est pas en baseline JPEG: %#x\n", marqueur);
 	 exit (EXIT_FAILURE);
+	 break;
+      default :
+	 printf ("Section non implémentée: %#x\n", marqueur);
+	 read_nbytes(stream, 2, &longueur_section, false);
+	 /* Passage à la section suivante */
+	 skip_bitstream_until (stream, 0xff);
+	 /* fprintf(stderr, "erreur: marqueur de section non reconnu: %#x\n", marqueur); */
+	 /* exit (1); */
       }
    }
-
    /* IQZZ */
    /* printf ("IQZZ: \n"); */
    int32_t **blocs_iqzz = malloc(nb_blocks_scan*sizeof(int32_t *));
@@ -528,7 +562,7 @@ int main(int argc, char *argv[]){
       /* print_mcu (up_blocs, i, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v); */
 
       upsampler (up_blocs, composantes[index].sampling_factor_h, composantes[index].sampling_factor_v,
-		mcus[l][index], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
+		 mcus[l][index], composantes[0].sampling_factor_h,  composantes[0].sampling_factor_v);
 
       free (up_blocs);
 
@@ -720,8 +754,8 @@ uint8_t *rearrange_blocs(uint8_t **blocs, uint32_t i, uint8_t sfh, uint8_t sfv)
    /* Pour chaque bloc de la matrice finale */
    for (uint32_t x = 0; x < sfh*sfv; x++) {
       for (uint32_t j = 0; j < 64; j++) {
-	    out[64*x + j] = blocs[i + x][j];
-	 }
+	 out[64*x + j] = blocs[i + x][j];
+      }
    }
 
    return out;
@@ -740,9 +774,11 @@ void Y_to_Grayscale(uint8_t  *mcu_Y, uint32_t *mcu_RGB,
       mcu_RGB[i] |= mcu_Y[i];
    }
 }
+
 void check_alloc_main(void* ptr)
 {
    if (!ptr) {
       fprintf (stderr, "alloc error: OUT OF MEMORY\n");
+      exit (EXIT_FAILURE);
    }
 }

@@ -54,7 +54,7 @@ int main(int argc, char **argv)
    /* INIT JPEG */
    printf ("\nINIT JPEG\n");
    /* Initialisation du jpeg de sortie */
-   struct jpeg_file_desc *jfd = init_jpeg_file (output_name, 0, 0, 0, 0);
+   struct jpeg_file_desc *jfd = init_jpeg_file (output_name, width, height, 2, 2);
    if (!jfd) {
       fprintf(stderr, "Impossible de créer le fichier de sortie.\n");
       exit (EXIT_FAILURE);

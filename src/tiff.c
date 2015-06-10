@@ -25,19 +25,19 @@
 #define NUM_ENTRIES 0x000c
 #define OFFSET_FIRST_IFD 0x00000008
 #define OFFSET_SUIV 0x0000
-#define BPS_OFFSET 0x0000009e
+#define BPS_OFFSET 0x00000008
 #define NO_COMPRESSION 0x10000
 #define RGB_IMAGE 0x20000
 #define BIG_ENDIAN_CODE 0x4d4d
 #define TIFF_ID 0x002a
-#define SPP_3 0x3
-#define X_RES_OFFSET 0xa4
-#define Y_RES_OFFSET 0xac
+#define SPP_3 0x1
+#define X_RES_OFFSET 0x9e
+#define Y_RES_OFFSET 0xa6
 #define RES_UNIT_CM 0x20000
-#define SBC_OFFSET 0xb4
+#define SBC_OFFSET 0xae
 #define FIRST_STRIP_OFFSET 0x00b4
 
-#define BYTES_PER_PIXEL 3
+#define BYTES_PER_PIXEL 1
 #define BYTE_SIZE 8
 #define PIXELS_PER_CM 100
 
@@ -120,7 +120,7 @@ void tiff_write_ifd(struct tiff_file_desc *tfd)
 
    /* Ecriture des entrees */
    /* Entrées constantes */
-   tiff_write_entry(tfd->tiff, BITS_PER_SAMPLE, SHORT, 3, BPS_OFFSET);
+   tiff_write_entry(tfd->tiff, BITS_PER_SAMPLE, LONG, 1, BPS_OFFSET);
    tiff_write_entry(tfd->tiff, COMPRESSION, SHORT, 1, NO_COMPRESSION);
    tiff_write_entry(tfd->tiff, PHOTOMETRIC_INTERPRETATION, SHORT, 1, RGB_IMAGE);
    tiff_write_entry(tfd->tiff, SAMPLE_PER_PIXEL, LONG, 1, SPP_3);
@@ -246,8 +246,8 @@ void close_tiff_file(struct tiff_file_desc *tfd)
    /* Ecriture des données dans le fichier */
    for (uint32_t i = 0; i < tfd->height; i++) {
       for (uint32_t j = 0; j < tfd->width; j++) {
-   	 fputc ((tfd->data[i][j] >> 16), tfd->tiff);
-   	 fputc ((tfd->data[i][j] >> 8), tfd->tiff);
+   	 /* fputc ((tfd->data[i][j] >> 16), tfd->tiff); */
+   	 /* fputc ((tfd->data[i][j] >> 8), tfd->tiff); */
    	 fputc (tfd->data[i][j], tfd->tiff);
       }
    }

@@ -98,13 +98,13 @@ int main(int argc, char *argv[]){
    struct huff_table *huff_DC[4] = {NULL, NULL, NULL, NULL}; /* Tables DC */
 
    /* Variables de propriétés d'images et d'échantillonnage */
-   uint32_t nb_mcus;		/* Nombre de MCUs YCbCr total */
-   uint32_t nb_mcus_RGB;	/* Nombre de MCUs RGB */
-   uint32_t nb_blocks_scan;	/* Nombre de blocs 8*8 dans l'image jpeg compressée */
+   uint32_t nb_mcus = 0;		/* Nombre de MCUs YCbCr total */
+   uint32_t nb_mcus_RGB = 0;	/* Nombre de MCUs RGB */
+   uint32_t nb_blocks_scan = 0;	/* Nombre de blocs 8*8 dans l'image jpeg compressée */
    uint8_t sampling = 0;	/* Facteur d'échantillonnage (Donne la taille des MCUs) */
-   int32_t **blocs ;		    /* Conteneur des blocs 8*8 extraits de l'image JFIF */
-   uint32_t height;		    /* Hauteur de l'image */
-   uint32_t width ;		    /* Largeur de l'image */
+   int32_t **blocs = NULL;		    /* Conteneur des blocs 8*8 extraits de l'image JFIF */
+   uint32_t height = 0;		    /* Hauteur de l'image */
+   uint32_t width = 0 ;		    /* Largeur de l'image */
    bool decoded_sos = false;	    /* Indique si on a déjà décodé la section SOS, et donc récupéré les données d'image */
 
    /* Variables de quantification */
@@ -114,21 +114,21 @@ int main(int argc, char *argv[]){
 
    /* Variables de composantes */
    struct unit *composantes = NULL; /* Conteneur d'attributs des composantes YCbCr (ou autres si extension ?) */
-   uint32_t N;			    /* Nombre de composantes */
-   uint8_t *ordre_composantes;	    /* Ordre d'apparition des composantes dans le fichier compressé */
-   uint8_t index;		/* Indice de la composante d'indice ic dans le tableau composantes en cas de désordre */
+   uint32_t N = 0;			    /* Nombre de composantes */
+   uint8_t *ordre_composantes = 0;	    /* Ordre d'apparition des composantes dans le fichier compressé */
+   uint8_t index = 0;		/* Indice de la composante d'indice ic dans le tableau composantes en cas de désordre */
 
    /* Attributs de section redondants et conteneurs */
-   uint32_t buf;		/* Conteneur brut */
-   uint32_t longueur_section ;	/* Longueur de la section courante */
-   uint32_t ic;			/* Indice d'une composante */
-   uint32_t iq;			/* Indice d'une table de quantification */
-   uint32_t sampling_factor_h;	/* Facteur d'échantillonnage horizontal d'une composante */
-   uint32_t sampling_factor_v;        /* Facteur d'échantillonnage horizontal d'une composante */
-   uint32_t ih_ac;		      /* Indice de table de Huffman ac */
-   uint32_t ih_dc;		      /* Indice de table de Huffman dc */
-   uint32_t precision;		      /* Précision. Inutilisée */
-   uint32_t marqueur;		      /* Marqueur de section JPEG */
+   uint32_t buf = 0;		/* Conteneur brut */
+   uint32_t longueur_section = 0 ;	/* Longueur de la section courante */
+   uint32_t ic = 0;			/* Indice d'une composante */
+   uint32_t iq = 0;			/* Indice d'une table de quantification */
+   uint32_t sampling_factor_h = 0;	/* Facteur d'échantillonnage horizontal d'une composante */
+   uint32_t sampling_factor_v = 0;        /* Facteur d'échantillonnage horizontal d'une composante */
+   uint32_t ih_ac = 0;		      /* Indice de table de Huffman ac */
+   uint32_t ih_dc = 0;		      /* Indice de table de Huffman dc */
+   uint32_t precision = 0;		      /* Précision. Inutilisée */
+   uint32_t marqueur = 0;		      /* Marqueur de section JPEG */
 
    /* EXTRACTION DE L ENTETE */
 

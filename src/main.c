@@ -56,6 +56,10 @@ uint8_t ic_to_i(struct unit *composantes, uint32_t N, uint32_t ic);
 void check_alloc_main(void* ptr);
 void Y_to_Grayscale(uint8_t  *mcu_Y, uint32_t *mcu_RGB,
 		    uint32_t nb_blocks_h, uint32_t nb_blocks_v);
+/*Gere les marqueurs de section non traites */
+void marqueur_section(uint32_t marqueur);
+
+
 
 int main(int argc, char *argv[]){
 
@@ -440,8 +444,12 @@ int main(int argc, char *argv[]){
 	 return 0;
 
       default :
-	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
-	 exit (EXIT_FAILURE);
+	 marqueur_section(buf);
+
+
+	 /*passage à la section suivante*/
+	 skip_bitstream_until(stream, 0xff);
+
       }
    }
 
@@ -745,4 +753,59 @@ void check_alloc_main(void* ptr)
    if (!ptr) {
       fprintf (stderr, "alloc error: OUT OF MEMORY\n");
    }
+}
+
+void marqueur_section(uint32_t marqueur){
+
+   printf("Erreur : Traitement du marqueur de section ");
+
+   if (marqueur==0xc8){
+      printf("JPG");
+   }
+   if (marqueur==0xcc){
+      printf("DAC");
+   }
+
+   switch (marqueur>>4 ){
+   case 0xc :
+      printf("SOF%i non traité par le décodeur \n", (marqueur&0x000F));
+      exit(EXIT_FAILURE);
+      break;
+   case 0xd:
+      if ((marqueur&0x000F)<8){
+	 printf("RST%i", marqueur&0x000F);
+      }
+      switch (marqueur&0x000F){
+      case 0xc :
+	 printf("DNL");
+	 break;
+      case 0xd:
+	 printf("DRI");
+	 break ;
+      case 0xe:
+	 printf("DHP");
+	 break ;
+      case 0xf:
+	 printf("EXP");
+	 break;
+
+      }
+      break;
+
+   case 0xe :
+      printf("APP%i", marqueur&0x000F);
+      break ;
+   case 0xf :
+      printf("JPG%i", marqueur&0x000F);
+      break;
+   default :
+      printf(" non reconnu \n");
+      exit(EXIT_FAILURE);
+      break ;
+
+      }
+
+printf(" non géré \n");
+return;
+
 }

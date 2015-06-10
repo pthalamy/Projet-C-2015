@@ -26,7 +26,7 @@ void dct(uint8_t in[64], int32_t out[64])
 {
    for (uint32_t u=0; u<8; u++){
       for (uint32_t v=0; v<8; v++){
-	 double S=0 ;
+	 double S = 0 ;
 
 	 for (uint32_t i=0; i<8; i++){
 	    for (uint32_t j=0; j<8; j++){
@@ -36,7 +36,9 @@ void dct(uint8_t in[64], int32_t out[64])
 
 	 S*=0.25;
 
-	 out[8*u+v]=S;
+	 uint32_t res = S;
+
+	 out[8*u+v] = res;
       }
    }
 

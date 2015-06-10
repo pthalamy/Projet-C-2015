@@ -105,7 +105,12 @@ int main(int argc, char **argv)
 
    /* DCT */
    printf ("\nDCT\n");
-   int32_t *dctBlocs = smalloc (nbBlocs * 64 * sizeof(int32_t));
+   int32_t *dctBlocs = smalloc (nbBlocs * 256 * sizeof(int32_t));
+   printf ("dctBlocs = %d\n", nbBlocs);
+   printf ("SIZEOF(dctBlocs) = %lu\n", nbBlocs * 64 * sizeof(int32_t));
+   printf ("dctBlocs[0] = %p - dctBlocs[nbBlocs] = %p\n", dctBlocs, dctBlocs + nbBlocs * 64 * sizeof(int32_t));
+   printf ("SIZEOF(downBlocs) = %lu\n", nbBlocs * 64 * sizeof(uint8_t));
+
    for (uint32_t i = 0; i < nbBlocs; i++) {
       /* print_uint8_t_block (downBlocs + i * (64 * sizeof(uint8_t)), i); */
       dct(downBlocs + i * (64 * sizeof(uint8_t)), dctBlocs + i * (64 * sizeof(int32_t)));
@@ -114,7 +119,7 @@ int main(int argc, char **argv)
 
    /* QUANTIFICATION ZIGZAG */
    printf ("\nQUANTIFICATION ZIG-ZAG\n");
-   int32_t *qzzBlocs = smalloc (nbBlocs * 64 * sizeof(int32_t));
+   int32_t *qzzBlocs = smalloc (nbBlocs * 256 * sizeof(int32_t));
    for (uint32_t i = 0; i < nbBlocs; ) {
       /* 4 Blocs de Luminance */
       for (uint32_t j = i; j < i + 4; j++) {

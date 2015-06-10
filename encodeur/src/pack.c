@@ -35,7 +35,7 @@ void diff_DC(struct bitstream *stream,
 	     struct huff_table *table_DC,
 	     int32_t bloc[64] )
 {
-   int32_t dc= bloc[0] - *pred_DC ;
+   int32_t dc = bloc[0] - *pred_DC ;
 
    /*Détermination de la magnitude de dc*/
    uint8_t mag = magnitude(dc, false);
@@ -63,8 +63,8 @@ void RLE_AC(struct bitstream *stream,
 {
    uint8_t i=1 ;
    uint32_t nb_zeros=0;
-   uint8_t val ;
-   uint8_t mag ;
+   uint8_t val  = 0;
+   uint8_t mag = 0;
    uint8_t code = 0 ;
    uint8_t nb_bits = 0 ;
 

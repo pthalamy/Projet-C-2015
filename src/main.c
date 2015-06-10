@@ -32,6 +32,9 @@ struct unit{
 /*    uint32_t ih_ac; */
 /* }; */
 
+
+void marqueur_section(uint32_t marqueur) ;
+
 char *check_and_gen_name(char *input_name)
 {
    char *pch = strrchr (input_name, '.');
@@ -486,8 +489,13 @@ int main(int argc, char *argv[]){
 	 /* printf ("EOI: fin de fichier  \n"); */
 	 return 0;
 	 break;
+
+
       default :
-	 fprintf(stderr, "erreur, marqueur de section non reconnu \n");
+
+	 marqueur_section(buf);
+
+	 fprintf(stderr, "Erreur, marqueur de section non reconnu \n");
 	 exit (1);
       }
    }
@@ -640,4 +648,61 @@ int main(int argc, char *argv[]){
    free (quantif);
 
    return 0;
+}
+
+
+
+
+
+
+void marqueur_section(uint32_t marqueur){
+
+   printf("Erreur : Traitement du marqueur de section ");
+
+   if (marqueur==0xc8){
+      printf("JPG");
+   }
+   if (marqueur==0xcc){
+      printf("DAC");
+   }
+
+   switch (marqueur>>4 ){
+   case 0xc :
+      printf("SOF%i", (marqueur&0x000F));
+      break;
+   case 0xd:
+      if ((marqueur&0x000F)<8){
+	 printf("RST%i", marqueur&0x000F);
+      }
+      switch (marqueur&0x000F){
+      case 0xc :
+	 printf("DNL");
+	 break;
+      case 0xd:
+	 printf("DRI");
+	 break ;
+      case 0xe:
+	 printf("DHP");
+	 break ;
+      case 0xf:
+	 printf("EXP");
+	 break;
+      }
+      break;
+
+   case 0xe :
+      printf("APP%i", marqueur&0x000F);
+      break ;
+   case 0xf :
+      printf("JPG%i", marqueur&0x000F);
+      break;
+   default :
+      return;
+      break ;
+
+      printf(" non géré \n");
+   }
+
+
+
 }
